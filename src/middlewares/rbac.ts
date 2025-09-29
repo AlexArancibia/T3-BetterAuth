@@ -1,4 +1,4 @@
-import { RBACService } from "@/services/rbacService";
+import { hasAnyRole } from "@/services/rbacService";
 import {
   PermissionAction,
   type PermissionCheck,
@@ -57,7 +57,7 @@ export function requireAnyRole(roleNames: string[]) {
     const { user } = authResult;
 
     try {
-      const hasRole = await RBACService.hasAnyRole(user.id, roleNames);
+      const hasRole = await hasAnyRole(user.id, roleNames);
 
       if (!hasRole) {
         return NextResponse.json(

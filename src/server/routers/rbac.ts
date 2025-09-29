@@ -5,21 +5,48 @@ import {
   createPaginatedResponse,
   paginationInputSchema,
 } from "../../lib/pagination";
-import { RBACService } from "../../services/rbacService";
+import {
+  assignPermissionToRole,
+  assignRole,
+  canAccessAdmin,
+  canManageRoles,
+  canManageTrades,
+  canManageTradingAccounts,
+  canManageUsers,
+  canViewDashboard,
+  createPermission,
+  createRole,
+  deleteRole,
+  getAllPermissions,
+  getAllRoles,
+  getPermissionByActionAndResource,
+  getRBACContext,
+  getRoleByName,
+  getRolePermissions,
+  getUserPermissions,
+  getUserRoles,
+  hasPermission,
+  hasRole,
+  isAdmin,
+  isSuperAdmin,
+  removePermissionFromRole,
+  removeRole,
+  updateRole,
+} from "../../services/rbacService";
 import { PermissionAction, PermissionResource } from "../../types/rbac";
 import { adminProcedure, publicProcedure, router } from "../trpc";
 
 export const rbacRouter = router({
   // Get all roles (simple array without pagination)
   getRoles: publicProcedure.query(async () => {
-    return await RBACService.getAllRoles();
+    return await getAllRoles();
   }),
 
   // Get all roles (with pagination)
   getAllRoles: publicProcedure
     .input(paginationInputSchema.optional())
     .query(async ({ input }) => {
-      const roles = await RBACService.getAllRoles();
+      const roles = await getAllRoles();
 
       if (!input) {
         // Si no hay paginación, devolver todos los roles en formato compatible
@@ -37,7 +64,7 @@ export const rbacRouter = router({
   getAllPermissions: publicProcedure
     .input(paginationInputSchema.optional())
     .query(async ({ input }) => {
-      const permissions = await RBACService.getAllPermissions();
+      const permissions = await getAllPermissions();
 
       if (!input) {
         return createPaginatedResponse(
@@ -64,21 +91,21 @@ export const rbacRouter = router({
   getRolePermissions: publicProcedure
     .input(z.object({ roleId: z.string() }))
     .query(async ({ input }) => {
-      return await RBACService.getRolePermissions(input.roleId);
+      return await getRolePermissions(input.roleId);
     }),
 
   // Get user roles
   getUserRoles: publicProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ input }) => {
-      return await RBACService.getUserRoles(input.userId);
+      return await getUserRoles(input.userId);
     }),
 
   // Get user permissions
   getUserPermissions: publicProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ input }) => {
-      return await RBACService.getUserPermissions(input.userId);
+      return await getUserPermissions(input.userId);
     }),
 
   // Check user permission
@@ -91,11 +118,7 @@ export const rbacRouter = router({
       })
     )
     .query(async ({ input }) => {
-      return await RBACService.hasPermission(
-        input.userId,
-        input.action,
-        input.resource
-      );
+      return await hasPermission(input.userId, input.action, input.resource);
     }),
 
   // Check user role
@@ -107,7 +130,7 @@ export const rbacRouter = router({
       })
     )
     .query(async ({ input }) => {
-      return await RBACService.hasRole(input.userId, input.roleName);
+      return await hasRole(input.userId, input.roleName);
     }),
 
   // Create role
@@ -123,7 +146,7 @@ export const rbacRouter = router({
     .mutation(async ({ input, ctx }) => {
       // Check if user has permission to create roles
       if (ctx.user?.id) {
-        const canCreateRole = await RBACService.hasPermission(
+        const canCreateRole = await hasPermission(
           ctx.user.id,
           PermissionAction.CREATE,
           PermissionResource.ROLE
@@ -136,7 +159,7 @@ export const rbacRouter = router({
         }
       }
 
-      return await RBACService.createRole(input);
+      return await createRole(input);
     }),
 
   // Update role
@@ -153,7 +176,7 @@ export const rbacRouter = router({
     .mutation(async ({ input, ctx }) => {
       // Check if user has permission to update roles
       if (ctx.user?.id) {
-        const canUpdateRole = await RBACService.hasPermission(
+        const canUpdateRole = await hasPermission(
           ctx.user.id,
           PermissionAction.UPDATE,
           PermissionResource.ROLE
@@ -166,7 +189,7 @@ export const rbacRouter = router({
         }
       }
 
-      return await RBACService.updateRole(input);
+      return await updateRole(input);
     }),
 
   // Delete role
@@ -175,7 +198,7 @@ export const rbacRouter = router({
     .mutation(async ({ input, ctx }) => {
       // Check if user has permission to delete roles
       if (ctx.user?.id) {
-        const canDeleteRole = await RBACService.hasPermission(
+        const canDeleteRole = await hasPermission(
           ctx.user.id,
           PermissionAction.DELETE,
           PermissionResource.ROLE
@@ -188,7 +211,7 @@ export const rbacRouter = router({
         }
       }
 
-      return await RBACService.deleteRole(input.id);
+      return await deleteRole(input.id);
     }),
 
   // Create permission
@@ -203,7 +226,7 @@ export const rbacRouter = router({
     .mutation(async ({ input, ctx }) => {
       // Check if user has permission to create permissions
       if (ctx.user?.id) {
-        const canCreatePermission = await RBACService.hasPermission(
+        const canCreatePermission = await hasPermission(
           ctx.user.id,
           PermissionAction.CREATE,
           PermissionResource.PERMISSION
@@ -216,7 +239,7 @@ export const rbacRouter = router({
         }
       }
 
-      return await RBACService.createPermission(input);
+      return await createPermission(input);
     }),
 
   // Assign role to user
@@ -232,7 +255,7 @@ export const rbacRouter = router({
     .mutation(async ({ input, ctx }) => {
       // Check if user has permission to assign roles
       if (ctx.user?.id) {
-        const canAssignRole = await RBACService.hasPermission(
+        const canAssignRole = await hasPermission(
           ctx.user.id,
           PermissionAction.UPDATE,
           PermissionResource.ROLE
@@ -245,7 +268,7 @@ export const rbacRouter = router({
         }
       }
 
-      return await RBACService.assignRole(
+      return await assignRole(
         input.userId,
         input.roleId,
         input.assignedBy,
@@ -264,7 +287,7 @@ export const rbacRouter = router({
     .mutation(async ({ input, ctx }) => {
       // Check if user has permission to remove roles
       if (ctx.user?.id) {
-        const canRemoveRole = await RBACService.hasPermission(
+        const canRemoveRole = await hasPermission(
           ctx.user.id,
           PermissionAction.UPDATE,
           PermissionResource.ROLE
@@ -277,7 +300,7 @@ export const rbacRouter = router({
         }
       }
 
-      await RBACService.removeRole(input.userId, input.roleId);
+      await removeRole(input.userId, input.roleId);
       return { success: true };
     }),
 
@@ -292,7 +315,7 @@ export const rbacRouter = router({
     .mutation(async ({ input, ctx }) => {
       // Check if user has permission to manage roles
       if (ctx.user?.id) {
-        const canManageRole = await RBACService.hasPermission(
+        const canManageRole = await hasPermission(
           ctx.user.id,
           PermissionAction.UPDATE,
           PermissionResource.ROLE
@@ -305,10 +328,7 @@ export const rbacRouter = router({
         }
       }
 
-      await RBACService.assignPermissionToRole(
-        input.roleId,
-        input.permissionId
-      );
+      await assignPermissionToRole(input.roleId, input.permissionId);
       return { success: true };
     }),
 
@@ -323,7 +343,7 @@ export const rbacRouter = router({
     .mutation(async ({ input, ctx }) => {
       // Check if user has permission to manage roles
       if (ctx.user?.id) {
-        const canManageRole = await RBACService.hasPermission(
+        const canManageRole = await hasPermission(
           ctx.user.id,
           PermissionAction.UPDATE,
           PermissionResource.ROLE
@@ -336,10 +356,7 @@ export const rbacRouter = router({
         }
       }
 
-      await RBACService.removePermissionFromRole(
-        input.roleId,
-        input.permissionId
-      );
+      await removePermissionFromRole(input.roleId, input.permissionId);
       return { success: true };
     }),
 
@@ -347,7 +364,7 @@ export const rbacRouter = router({
   getRoleByName: publicProcedure
     .input(z.object({ name: z.string() }))
     .query(async ({ input }) => {
-      return await RBACService.getRoleByName(input.name);
+      return await getRoleByName(input.name);
     }),
 
   // Get permission by action and resource
@@ -359,7 +376,7 @@ export const rbacRouter = router({
       })
     )
     .query(async ({ input }) => {
-      return await RBACService.getPermissionByActionAndResource(
+      return await getPermissionByActionAndResource(
         input.action,
         input.resource
       );
@@ -369,62 +386,62 @@ export const rbacRouter = router({
   isAdmin: publicProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ input }) => {
-      return await RBACService.isAdmin(input.userId);
+      return await isAdmin(input.userId);
     }),
 
   // Check if user is super admin
   isSuperAdmin: publicProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ input }) => {
-      return await RBACService.isSuperAdmin(input.userId);
+      return await isSuperAdmin(input.userId);
     }),
 
   // Check if user can manage users
   canManageUsers: publicProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ input }) => {
-      return await RBACService.canManageUsers(input.userId);
+      return await canManageUsers(input.userId);
     }),
 
   // Check if user can manage roles
   canManageRoles: publicProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ input }) => {
-      return await RBACService.canManageRoles(input.userId);
+      return await canManageRoles(input.userId);
     }),
 
   // Check if user can access admin panel
   canAccessAdmin: publicProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ input }) => {
-      return await RBACService.canAccessAdmin(input.userId);
+      return await canAccessAdmin(input.userId);
     }),
 
   // Check if user can manage trading accounts
   canManageTradingAccounts: publicProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ input }) => {
-      return await RBACService.canManageTradingAccounts(input.userId);
+      return await canManageTradingAccounts(input.userId);
     }),
 
   // Check if user can manage trades
   canManageTrades: publicProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ input }) => {
-      return await RBACService.canManageTrades(input.userId);
+      return await canManageTrades(input.userId);
     }),
 
   // Check if user can view dashboard
   canViewDashboard: publicProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ input }) => {
-      return await RBACService.canViewDashboard(input.userId);
+      return await canViewDashboard(input.userId);
     }),
 
   // Get RBAC context for user
   getRBACContext: publicProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ input }) => {
-      return await RBACService.getRBACContext(input.userId);
+      return await getRBACContext(input.userId);
     }),
 });

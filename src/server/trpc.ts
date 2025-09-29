@@ -30,11 +30,11 @@ export const adminProcedure = t.procedure.use(async ({ ctx, next }) => {
     });
   }
 
-  // Import RBACService here to avoid circular dependencies
-  const { RBACService } = await import("../services/rbacService");
-  const isAdmin = await RBACService.isAdmin(ctx.user.id);
+  // Import isAdmin here to avoid circular dependencies
+  const { isAdmin } = await import("../services/rbacService");
+  const adminCheck = await isAdmin(ctx.user.id);
 
-  if (!isAdmin) {
+  if (!adminCheck) {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "You must be an admin to access this resource",
@@ -58,11 +58,11 @@ export const superAdminProcedure = t.procedure.use(async ({ ctx, next }) => {
     });
   }
 
-  // Import RBACService here to avoid circular dependencies
-  const { RBACService } = await import("../services/rbacService");
-  const isSuperAdmin = await RBACService.isSuperAdmin(ctx.user.id);
+  // Import isSuperAdmin here to avoid circular dependencies
+  const { isSuperAdmin } = await import("../services/rbacService");
+  const superAdminCheck = await isSuperAdmin(ctx.user.id);
 
-  if (!isSuperAdmin) {
+  if (!superAdminCheck) {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "You must be a super admin to access this resource",

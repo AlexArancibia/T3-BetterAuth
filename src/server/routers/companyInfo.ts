@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { prisma } from "../../lib/db";
-import { RBACService } from "../../services/rbacService";
+import { hasPermission } from "../../services/rbacService";
 import { PermissionAction, PermissionResource } from "../../types/rbac";
 import { protectedProcedure, router } from "../trpc";
 
@@ -52,7 +52,7 @@ export const companyInfoRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       // Check if user has permission to manage company info
-      const canManage = await RBACService.hasPermission(
+      const canManage = await hasPermission(
         ctx.user.id,
         PermissionAction.UPDATE,
         PermissionResource.ADMIN
@@ -93,7 +93,7 @@ export const companyInfoRouter = router({
   // Get company info for admin dashboard
   getForAdmin: protectedProcedure.query(async ({ ctx }) => {
     // Check if user has permission to view admin data
-    const canView = await RBACService.hasPermission(
+    const canView = await hasPermission(
       ctx.user.id,
       PermissionAction.READ,
       PermissionResource.ADMIN

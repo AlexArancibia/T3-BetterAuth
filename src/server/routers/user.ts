@@ -8,7 +8,7 @@ import {
   createSortOrder,
   paginationInputSchema,
 } from "../../lib/pagination";
-import { RBACService } from "../../services/rbacService";
+import { hasPermission } from "../../services/rbacService";
 import { PermissionAction, PermissionResource } from "../../types/rbac";
 import { validateEmail } from "../../utils/validate";
 import { protectedProcedure, router } from "../trpc";
@@ -116,7 +116,7 @@ export const userRouter = router({
 
       // Check permissions: users can edit themselves, admins can edit anyone
       if (input.id && input.id !== ctx.user.id) {
-        const canManageUsers = await RBACService.hasPermission(
+        const canManageUsers = await hasPermission(
           ctx.user.id,
           PermissionAction.MANAGE,
           PermissionResource.USER
@@ -193,7 +193,7 @@ export const userRouter = router({
     .mutation(async ({ input, ctx }) => {
       // Check permissions: users can delete themselves, admins can delete anyone
       if (input.id !== ctx.user.id) {
-        const canManageUsers = await RBACService.hasPermission(
+        const canManageUsers = await hasPermission(
           ctx.user.id,
           PermissionAction.MANAGE,
           PermissionResource.USER
@@ -226,7 +226,7 @@ export const userRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       // Check permissions: only admins can create users
-      const canManageUsers = await RBACService.hasPermission(
+      const canManageUsers = await hasPermission(
         ctx.user.id,
         PermissionAction.MANAGE,
         PermissionResource.USER
@@ -301,7 +301,7 @@ export const userRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       // Check permissions: only admins can assign roles
-      const canManageUsers = await RBACService.hasPermission(
+      const canManageUsers = await hasPermission(
         ctx.user.id,
         PermissionAction.MANAGE,
         PermissionResource.USER
@@ -370,7 +370,7 @@ export const userRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       // Check permissions: only admins can remove roles
-      const canManageUsers = await RBACService.hasPermission(
+      const canManageUsers = await hasPermission(
         ctx.user.id,
         PermissionAction.MANAGE,
         PermissionResource.USER
@@ -422,7 +422,7 @@ export const userRouter = router({
     .query(async ({ input, ctx }) => {
       // Users can see their own roles, admins can see any user's roles
       if (input.userId !== ctx.user.id) {
-        const canManageUsers = await RBACService.hasPermission(
+        const canManageUsers = await hasPermission(
           ctx.user.id,
           PermissionAction.MANAGE,
           PermissionResource.USER

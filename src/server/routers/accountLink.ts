@@ -7,7 +7,7 @@ import {
   createSortOrder,
   paginationInputSchema,
 } from "../../lib/pagination";
-import { RBACService } from "../../services/rbacService";
+import { hasPermission } from "../../services/rbacService";
 import { PermissionAction, PermissionResource } from "../../types/rbac";
 import { protectedProcedure, router } from "../trpc";
 
@@ -41,7 +41,7 @@ export const accountLinkRouter = router({
     .input(z.object({ userId: z.string() }))
     .query(async ({ input, ctx }) => {
       // Check if user has permission to view other users' data
-      const canManageUsers = await RBACService.hasPermission(
+      const canManageUsers = await hasPermission(
         ctx.user.id,
         PermissionAction.READ,
         PermissionResource.USER

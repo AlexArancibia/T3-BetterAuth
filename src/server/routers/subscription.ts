@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "../../lib/db";
-import { RBACService } from "../../services/rbacService";
+import { hasPermission } from "../../services/rbacService";
 import { PermissionAction, PermissionResource } from "../../types/rbac";
 import { protectedProcedure, router } from "../trpc";
 
@@ -21,7 +21,7 @@ export const subscriptionRouter = router({
     .input(z.object({ userId: z.string() }))
     .query(async ({ input, ctx }) => {
       // Check if user has permission to view other users' data
-      const canManageUsers = await RBACService.hasPermission(
+      const canManageUsers = await hasPermission(
         ctx.user.id,
         PermissionAction.READ,
         PermissionResource.USER
@@ -99,7 +99,7 @@ export const subscriptionRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       // Check if user has permission to manage subscriptions
-      const canManageUsers = await RBACService.hasPermission(
+      const canManageUsers = await hasPermission(
         ctx.user.id,
         PermissionAction.UPDATE,
         PermissionResource.USER
@@ -159,7 +159,7 @@ export const subscriptionRouter = router({
     )
     .query(async ({ input, ctx }) => {
       // Check if user has permission to view all subscriptions
-      const canManageUsers = await RBACService.hasPermission(
+      const canManageUsers = await hasPermission(
         ctx.user.id,
         PermissionAction.READ,
         PermissionResource.USER

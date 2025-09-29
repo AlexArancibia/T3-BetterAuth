@@ -1,5 +1,10 @@
 import { auth } from "@/lib/auth";
-import { RBACService } from "@/services/rbacService";
+import {
+  hasAllPermissions,
+  hasAnyPermission,
+  hasPermission,
+  hasRole,
+} from "@/services/rbacService";
 import type {
   PermissionAction,
   PermissionCheck,
@@ -52,13 +57,9 @@ export function createPermissionMiddleware(
     const { user } = authResult;
 
     try {
-      const hasPermission = await RBACService.hasPermission(
-        user.id,
-        action,
-        resource
-      );
+      const userHasPermission = await hasPermission(user.id, action, resource);
 
-      if (!hasPermission) {
+      if (!userHasPermission) {
         return NextResponse.json(
           { error: "Insufficient permissions" },
           { status: 403 }
@@ -96,15 +97,9 @@ export function createMultiPermissionMiddleware(
       let hasPermission = false;
 
       if (requireAll) {
-        hasPermission = await RBACService.hasAllPermissions(
-          user.id,
-          permissionChecks
-        );
+        hasPermission = await hasAllPermissions(user.id, permissionChecks);
       } else {
-        hasPermission = await RBACService.hasAnyPermission(
-          user.id,
-          permissionChecks
-        );
+        hasPermission = await hasAnyPermission(user.id, permissionChecks);
       }
 
       if (!hasPermission) {
@@ -139,9 +134,9 @@ export function createRoleMiddleware(roleName: string) {
     const { user } = authResult;
 
     try {
-      const hasRole = await RBACService.hasRole(user.id, roleName);
+      const userHasRole = await hasRole(user.id, roleName);
 
-      if (!hasRole) {
+      if (!userHasRole) {
         return NextResponse.json(
           { error: "Insufficient role permissions" },
           { status: 403 }

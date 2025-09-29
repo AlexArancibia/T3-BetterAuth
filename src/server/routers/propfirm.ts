@@ -8,7 +8,7 @@ import {
   createSortOrder,
   paginationInputSchema,
 } from "../../lib/pagination";
-import { RBACService } from "../../services/rbacService";
+import { hasPermission } from "../../services/rbacService";
 import { PermissionAction, PermissionResource } from "../../types/rbac";
 import { protectedProcedure, publicProcedure, router } from "../trpc";
 
@@ -110,12 +110,12 @@ export const propfirmRouter = router({
     .mutation(async ({ input, ctx }) => {
       // Check permission
       if (ctx.user?.id) {
-        const hasPermission = await RBACService.hasPermission(
+        const userHasPermission = await hasPermission(
           ctx.user.id,
           PermissionAction.CREATE,
           PermissionResource.PROPFIRM
         );
-        if (!hasPermission) {
+        if (!userHasPermission) {
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "You don't have permission to create propfirms",
@@ -162,12 +162,12 @@ export const propfirmRouter = router({
     .mutation(async ({ input, ctx }) => {
       // Check permission
       if (ctx.user?.id) {
-        const hasPermission = await RBACService.hasPermission(
+        const userHasPermission = await hasPermission(
           ctx.user.id,
           PermissionAction.UPDATE,
           PermissionResource.PROPFIRM
         );
-        if (!hasPermission) {
+        if (!userHasPermission) {
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "You don't have permission to update propfirms",
@@ -220,12 +220,12 @@ export const propfirmRouter = router({
     .mutation(async ({ input, ctx }) => {
       // Check permission
       if (ctx.user?.id) {
-        const hasPermission = await RBACService.hasPermission(
+        const userHasPermission = await hasPermission(
           ctx.user.id,
           PermissionAction.DELETE,
           PermissionResource.PROPFIRM
         );
-        if (!hasPermission) {
+        if (!userHasPermission) {
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "You don't have permission to delete propfirms",
@@ -270,12 +270,12 @@ export const propfirmRouter = router({
     .query(async ({ input, ctx }) => {
       // Check permission
       if (ctx.user?.id) {
-        const hasPermission = await RBACService.hasPermission(
+        const userHasPermission = await hasPermission(
           ctx.user.id,
           PermissionAction.READ,
           PermissionResource.PROPFIRM
         );
-        if (!hasPermission) {
+        if (!userHasPermission) {
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "You don't have permission to view propfirm statistics",

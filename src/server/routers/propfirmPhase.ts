@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { prisma } from "../../lib/db";
-import { RBACService } from "../../services/rbacService";
+import { hasPermission } from "../../services/rbacService";
 import { PermissionAction, PermissionResource } from "../../types/rbac";
 import { protectedProcedure, router } from "../trpc";
 
@@ -12,12 +12,12 @@ export const propfirmPhaseRouter = router({
     .query(async ({ input, ctx }) => {
       // Check permission
       if (ctx.user?.id) {
-        const hasPermission = await RBACService.hasPermission(
+        const userHasPermission = await hasPermission(
           ctx.user.id,
           PermissionAction.READ,
           PermissionResource.PROPFIRM
         );
-        if (!hasPermission) {
+        if (!userHasPermission) {
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "You don't have permission to view propfirm phases",
@@ -52,12 +52,12 @@ export const propfirmPhaseRouter = router({
     .query(async ({ input, ctx }) => {
       // Check permission
       if (ctx.user?.id) {
-        const hasPermission = await RBACService.hasPermission(
+        const userHasPermission = await hasPermission(
           ctx.user.id,
           PermissionAction.READ,
           PermissionResource.PROPFIRM
         );
-        if (!hasPermission) {
+        if (!userHasPermission) {
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "You don't have permission to view propfirm phases",
@@ -105,12 +105,12 @@ export const propfirmPhaseRouter = router({
     .mutation(async ({ input, ctx }) => {
       // Check permission
       if (ctx.user?.id) {
-        const hasPermission = await RBACService.hasPermission(
+        const userHasPermission = await hasPermission(
           ctx.user.id,
           PermissionAction.CREATE,
           PermissionResource.PROPFIRM
         );
-        if (!hasPermission) {
+        if (!userHasPermission) {
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "You don't have permission to create propfirm phases",
@@ -172,12 +172,12 @@ export const propfirmPhaseRouter = router({
     .mutation(async ({ input, ctx }) => {
       // Check permission
       if (ctx.user?.id) {
-        const hasPermission = await RBACService.hasPermission(
+        const userHasPermission = await hasPermission(
           ctx.user.id,
           PermissionAction.UPDATE,
           PermissionResource.PROPFIRM
         );
-        if (!hasPermission) {
+        if (!userHasPermission) {
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "You don't have permission to update propfirm phases",
@@ -234,12 +234,12 @@ export const propfirmPhaseRouter = router({
     .mutation(async ({ input, ctx }) => {
       // Check permission
       if (ctx.user?.id) {
-        const hasPermission = await RBACService.hasPermission(
+        const userHasPermission = await hasPermission(
           ctx.user.id,
           PermissionAction.DELETE,
           PermissionResource.PROPFIRM
         );
-        if (!hasPermission) {
+        if (!userHasPermission) {
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "You don't have permission to delete propfirm phases",
@@ -306,12 +306,12 @@ export const propfirmPhaseRouter = router({
     .mutation(async ({ input, ctx }) => {
       // Check permission
       if (ctx.user?.id) {
-        const hasPermission = await RBACService.hasPermission(
+        const userHasPermission = await hasPermission(
           ctx.user.id,
           PermissionAction.UPDATE,
           PermissionResource.PROPFIRM
         );
-        if (!hasPermission) {
+        if (!userHasPermission) {
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "You don't have permission to reorder propfirm phases",
