@@ -1,26 +1,53 @@
 {
-	"$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
-	"vcs": {
-		"enabled": true,
-		"clientKind": "git",
-		"useIgnoreFile": true
-	},
-	"files": { "ignoreUnknown": false, "ignore": [] },
-	"formatter": { "enabled": true },
-	"organizeImports": { "enabled": true },
-	"linter": {
-		"enabled": true,
-		"rules": {
-			"nursery": {
-				"useSortedClasses": {
-					"level": "warn",
-					"fix": "safe",
-					"options": {
-						"functions": ["clsx", "cva", "cn"]
-					}
-				}
-			},
-			"recommended": true
-		}
-	}
+  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "ignoreUnknown": false,
+    "ignore": [".next/**", "node_modules/**", ".git/**"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2
+  },
+  "organizeImports": {
+    "enabled": true
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "a11y": {
+        "recommended": true,
+        "noSvgWithoutTitle": "warn"
+      },
+      "complexity": {
+        "noForEach": "off"
+      },
+      "correctness": {
+        "useExhaustiveDependencies": "warn",
+        "noUnusedVariables": "error"
+      },
+      "suspicious": {
+        "noExplicitAny": "warn",
+        "noArrayIndexKey": "warn"
+      },
+      "style": {
+        "noNonNullAssertion": "warn"
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double",
+      "trailingCommas": "es5",
+      "semicolons": "always",
+      "arrowParentheses": "always",
+      "jsxQuoteStyle": "double"
+    }
+  }
 }
