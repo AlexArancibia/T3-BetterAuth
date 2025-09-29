@@ -7,7 +7,7 @@ Disallow: /api/
 Disallow: /admin/
 Disallow: /dashboard/
 
-Sitemap: ${process.env.SITE_URL || "https://example.com"}/sitemap.xml`;
+Sitemap: ${process.env.SITE_URL!}/sitemap.xml`;
 
   return new NextResponse(robotsTxt, {
     headers: {

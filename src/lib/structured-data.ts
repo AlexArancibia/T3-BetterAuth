@@ -5,8 +5,8 @@ export function generateOrganizationSchema() {
     name: "MiApp",
     description:
       "Una plataforma moderna para gestionar proyectos, colaborar en equipo y alcanzar tus objetivos.",
-    url: process.env.SITE_URL || "https://example.com",
-    logo: `${process.env.SITE_URL || "https://example.com"}/logo.png`,
+    url: process.env.SITE_URL!,
+    logo: `${process.env.SITE_URL!}/logo.png`,
     sameAs: [
       // Agregar URLs de redes sociales cuando estén disponibles
       // "https://twitter.com/miapp",
@@ -28,12 +28,12 @@ export function generateWebSiteSchema() {
     name: "MiApp",
     description:
       "Una plataforma moderna para gestionar proyectos, colaborar en equipo y alcanzar tus objetivos.",
-    url: process.env.SITE_URL || "https://example.com",
+    url: process.env.SITE_URL!,
     potentialAction: {
       "@type": "SearchAction",
       target: {
         "@type": "EntryPoint",
-        urlTemplate: `${process.env.SITE_URL || "https://example.com"}/search?q={search_term_string}`,
+        urlTemplate: `${process.env.SITE_URL!}/search?q={search_term_string}`,
       },
       "query-input": "required name=search_term_string",
     },
@@ -47,7 +47,7 @@ export function generateSoftwareApplicationSchema() {
     name: "MiApp",
     description:
       "Una plataforma moderna para gestionar proyectos, colaborar en equipo y alcanzar tus objetivos.",
-    url: process.env.SITE_URL || "https://example.com",
+    url: process.env.SITE_URL!,
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web Browser",
     offers: {

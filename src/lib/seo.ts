@@ -24,14 +24,14 @@ export const defaultMetadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL(process.env.SITE_URL || "https://example.com"),
+  metadataBase: new URL(process.env.SITE_URL!),
   alternates: {
     canonical: "/",
   },
   openGraph: {
     type: "website",
     locale: "es_ES",
-    url: process.env.SITE_URL || "https://example.com",
+    url: process.env.SITE_URL!,
     title: "MiApp - Plataforma de Productividad",
     description:
       "Una plataforma moderna para gestionar proyectos, colaborar en equipo y alcanzar tus objetivos.",

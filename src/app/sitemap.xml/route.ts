@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  const baseUrl = process.env.SITE_URL || "https://example.com";
+  const baseUrl = process.env.SITE_URL!;
 
   const staticPages = [
     {

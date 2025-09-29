@@ -104,7 +104,11 @@ export const auth = betterAuth({
   security: {
     corsOrigin:
       process.env.NODE_ENV === "production"
-        ? [process.env.SITE_URL || "https://your-domain.com"]
+        ? [
+            process.env.SITE_URL!,
+            "https://feniz.emetstudio.com",
+            "https://www.feniz.emetstudio.com",
+          ]
         : ["http://localhost:3000"],
   },
 
