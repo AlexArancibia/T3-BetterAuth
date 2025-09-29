@@ -1,20 +1,551 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
 generator client {
-    provider = "prisma-client-js"
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
-model Post {
-    id        Int      @id @default(autoincrement())
-    name      String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+// ================================
+// ENUMS
+// ================================
 
-    @@index([name])
+enum SubscriptionPlan {
+  FREE
+  BASIC
+  PREMIUM
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+  UNPAID
+}
+
+enum Language {
+  ES
+  EN
+  PT
+}
+
+enum Theme {
+  LIGHT
+  DARK
+  AUTO
+}
+
+enum AccountType {
+  PROPFIRM
+  BROKER
+}
+
+enum TradeStatus {
+  OPEN
+  CLOSED
+  CANCELLED
+  PARTIALLY_CLOSED
+}
+
+enum EntryMethod {
+  MANUAL
+  API
+  COPY_TRADING
+}
+
+enum PaymentProvider {
+  STRIPE
+  PAYPAL
+  MERCADOPAGO
+  CULQI
+}
+
+enum SymbolCategory {
+  FOREX
+  INDICES
+  COMMODITIES
+  CRYPTO
+  STOCKS
+}
+
+enum PermissionAction {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  MANAGE
+}
+
+enum PermissionResource {
+  USER
+  ROLE
+  PERMISSION
+  TRADING_ACCOUNT
+  TRADE
+  PROPFIRM
+  BROKER
+  SYMBOL
+  SUBSCRIPTION
+  DASHBOARD
+  ADMIN
+}
+
+// ================================
+// AUTH MODELS (Better Auth)
+// ================================
+
+model User {
+  // Core Better Auth fields (required)
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Additional application fields
+  phone                   String?
+  language                Language  @default(ES)
+  defaultRiskPercentage   Decimal   @default(1.00) @db.Decimal(5, 2)
+
+  // Relations
+  sessions Session[]
+  accounts Account[]
+  userSubscriptions UserSubscription[]
+  tradingAccounts   TradingAccount[]
+  accountLinks      AccountLink[] @relation("UserAccountLinks")
+  userRoles         UserRole[]
+}
+
+model Session {
+  // Core Better Auth fields (required)
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  // Core Better Auth fields (required)
+  id                    String    @id @default(cuid())
+  userId                String
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  idToken               String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  // Relations
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+}
+
+model Verification {
+  // Core Better Auth fields (required)
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([identifier, value])
+}
+
+// ================================
+// RBAC SYSTEM
+// ================================
+
+model Role {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  displayName String
+  description String?
+  isActive    Boolean   @default(true)
+  isSystem    Boolean   @default(false) // System roles cannot be deleted
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  userRoles        UserRole[]
+  rolePermissions  RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String            @id @default(uuid())
+  action      PermissionAction
+  resource    PermissionResource
+  description String?
+  isActive    Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  // Relations
+  rolePermissions RolePermission[]
+
+  @@unique([action, resource])
+  @@map("permissions")
+}
+
+model UserRole {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  assignedAt DateTime @default(now())
+  assignedBy String? // ID of the user who assigned this role
+  expiresAt  DateTime? // Optional expiration date for temporary roles
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+  @@index([expiresAt])
+  @@map("user_roles")
+}
+
+model RolePermission {
+  id           String     @id @default(uuid())
+  roleId       String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+// ================================
+// COMPANY INFORMATION
+// ================================
+
+model CompanyInfo {
+  id          String    @id @default(uuid())
+  name        String    @default("Feniz")
+  displayName String    @default("Feniz Trading Platform")
+  description String?
+  email       String?
+  phone       String?
+  address     String?
+  city        String?
+  country     String?
+  website     String?
+  
+  // Social Media
+  facebookUrl  String?
+  twitterUrl   String?
+  instagramUrl String?
+  linkedinUrl  String?
+  youtubeUrl   String?
+  
+  // Additional Info
+  foundedYear  Int?
+  logoUrl      String?
+  faviconUrl   String?
+  
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+  metaKeywords    String?
+  
+  // Legal
+  termsUrl      String?
+  privacyUrl    String?
+  cookiesUrl    String?
+  complaintsUrl String?
+  
+  // Status
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("company_info")
+}
+
+// ================================
+// USER MANAGEMENT
+// ================================
+
+model UserSubscription {
+  id                      String             @id @default(uuid())
+  userId                  String
+  user                    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan                    SubscriptionPlan   @default(FREE)
+  status                  SubscriptionStatus @default(TRIALING)
+  paymentProvider         PaymentProvider
+  providerCustomerId      String?
+  providerSubscriptionId  String?
+  currentPlanStart        DateTime?
+  currentPlanEnd          DateTime?
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+
+  @@map("user_subscriptions")
+}
+
+// ================================
+// PROPFIRM MANAGEMENT
+// ================================
+
+model Propfirm {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  displayName String
+  description String?
+  website     String?
+  logoUrl     String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relaciones
+  phases              PropfirmPhase[]
+  accountTypes        PropfirmAccountType[]
+  rulesConfigurations PropfirmRulesConfiguration[]
+  symbolConfigurations SymbolConfiguration[]
+  tradingAccounts     TradingAccount[]
+
+  @@map("propfirms")
+}
+
+model PropfirmPhase {
+  id          String    @id @default(uuid())
+  propfirmId  String
+  propfirm    Propfirm  @relation(fields: [propfirmId], references: [id], onDelete: Cascade)
+  phaseName   String
+  displayName String
+  displayOrder Int      @default(0)
+  isEvaluation Boolean  @default(true)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relaciones
+  rulesConfigurations PropfirmRulesConfiguration[]
+  tradingAccounts     TradingAccount[]
+
+  @@unique([propfirmId, phaseName])
+  @@map("propfirm_phases")
+}
+
+model PropfirmAccountType {
+  id            String    @id @default(uuid())
+  propfirmId    String
+  propfirm      Propfirm  @relation(fields: [propfirmId], references: [id], onDelete: Cascade)
+  typeName      String
+  displayName   String
+  initialBalance Decimal  @db.Decimal(15, 2)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relaciones
+  rulesConfigurations PropfirmRulesConfiguration[]
+  tradingAccounts     TradingAccount[]
+
+  @@unique([propfirmId, typeName])
+  @@map("propfirm_account_types")
+}
+
+model PropfirmRulesConfiguration {
+  id              String                @id @default(uuid())
+  propfirmId      String
+  propfirm        Propfirm              @relation(fields: [propfirmId], references: [id], onDelete: Cascade)
+  accountTypeId   String
+  accountType     PropfirmAccountType   @relation(fields: [accountTypeId], references: [id], onDelete: Cascade)
+  phaseId         String
+  phase           PropfirmPhase         @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  maxDrawdown     Decimal               @db.Decimal(5, 2)
+  dailyDrawdown   Decimal               @db.Decimal(5, 2)
+  profitTarget    Decimal?              @db.Decimal(5, 2)
+  isActive        Boolean               @default(true)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@unique([propfirmId, accountTypeId, phaseId])
+  @@map("propfirm_rules_configuration")
+}
+
+// ================================
+// BROKER MANAGEMENT
+// ================================
+
+model Broker {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  displayName String
+  description String?
+  website     String?
+  logoUrl     String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relaciones
+  symbolConfigurations SymbolConfiguration[]
+  tradingAccounts     TradingAccount[]
+
+  @@map("brokers")
+}
+
+// ================================
+// SYMBOL MANAGEMENT
+// ================================
+
+model Symbol {
+  id                    String           @id @default(uuid())
+  symbol                String           @unique
+  displayName           String
+  category              SymbolCategory
+  baseCurrency          String           @db.VarChar(3)
+  quoteCurrency         String           @db.VarChar(3)
+  pipDecimalPosition    Int              @default(4)
+  isActive              Boolean          @default(true)
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  // Relaciones
+  symbolConfigurations SymbolConfiguration[]
+  trades               Trade[]
+
+  @@map("symbols")
+}
+
+model SymbolConfiguration {
+  id                String    @id @default(uuid())
+  propfirmId        String?
+  propfirm          Propfirm? @relation(fields: [propfirmId], references: [id], onDelete: Cascade)
+  brokerId          String?
+  broker            Broker?   @relation(fields: [brokerId], references: [id], onDelete: Cascade)
+  symbolId          String
+  symbol            Symbol    @relation(fields: [symbolId], references: [id], onDelete: Cascade)
+  commissionPerLot  Decimal?  @db.Decimal(10, 4)
+  pipValuePerLot    Decimal   @db.Decimal(10, 4)
+  pipTicks          Int       @default(1)
+  spreadTypical     Decimal?  @db.Decimal(8, 4)
+  spreadRecommended Decimal?  @db.Decimal(8, 4)
+  isAvailable       Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([propfirmId, symbolId])
+  @@unique([brokerId, symbolId])
+  @@map("symbol_configurations")
+}
+
+// ================================
+// TRADING ACCOUNTS
+// ================================
+
+model TradingAccount {
+  id              String      @id @default(uuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountName     String
+  accountType     AccountType
+  accountNumber   String?
+  server          String?
+  propfirmId      String?
+  propfirm        Propfirm?   @relation(fields: [propfirmId], references: [id])
+  brokerId        String?
+  broker          Broker?     @relation(fields: [brokerId], references: [id])
+  accountTypeId   String?
+  accountTypeRef  PropfirmAccountType? @relation(fields: [accountTypeId], references: [id])
+  initialBalance  Decimal     @db.Decimal(15, 2)
+  currentBalance  Decimal     @default(0) @db.Decimal(15, 2)
+  equity          Decimal     @default(0) @db.Decimal(15, 2)
+  currentPhaseId  String?
+  currentPhase    PropfirmPhase? @relation(fields: [currentPhaseId], references: [id])
+  status          String      @default("active")
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relaciones
+  trades          Trade[]
+  propfirmLinks   AccountLink[] @relation("PropfirmAccount")
+  brokerLinks     AccountLink[] @relation("BrokerAccount")
+
+  @@map("trading_accounts")
+}
+
+model AccountLink {
+  id                  String          @id @default(uuid())
+  userId              String
+  user                User            @relation("UserAccountLinks", fields: [userId], references: [id], onDelete: Cascade)
+  propfirmAccountId   String
+  propfirmAccount     TradingAccount  @relation("PropfirmAccount", fields: [propfirmAccountId], references: [id], onDelete: Cascade)
+  brokerAccountId     String
+  brokerAccount       TradingAccount  @relation("BrokerAccount", fields: [brokerAccountId], references: [id], onDelete: Cascade)
+  autoCopyEnabled     Boolean         @default(false)
+  maxRiskPerTrade     Decimal         @default(1.00) @db.Decimal(5, 2)
+  isActive            Boolean         @default(true)
+  lastCopyAt          DateTime?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  @@map("account_links")
+}
+
+// ================================
+// TRADES
+// ================================
+
+model Trade {
+  id              String      @id @default(uuid())
+  externalTradeId String?
+  accountId       String
+  account         TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  symbolId        String
+  symbol          Symbol      @relation(fields: [symbolId], references: [id], onDelete: Cascade)
+  direction       String      // 'buy' or 'sell'
+  entryPrice      Decimal     @db.Decimal(20, 8)
+  exitPrice       Decimal?    @db.Decimal(20, 8)
+  lotSize         Decimal     @db.Decimal(15, 4)
+  stopLoss        Decimal?    @db.Decimal(20, 8)
+  takeProfit      Decimal?    @db.Decimal(20, 8)
+  openTime        DateTime
+  closeTime       DateTime?
+  profitLoss      Decimal     @default(0) @db.Decimal(15, 2)
+  commission      Decimal     @default(0) @db.Decimal(15, 2)
+  swap            Decimal     @default(0) @db.Decimal(15, 2)
+  netProfit       Decimal     @default(0) @db.Decimal(15, 2)
+  status          TradeStatus @default(OPEN)
+  entryMethod     EntryMethod @default(MANUAL)
+  notes           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@map("trades")
 }
