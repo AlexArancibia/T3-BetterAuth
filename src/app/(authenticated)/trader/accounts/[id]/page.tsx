@@ -1,6 +1,7 @@
 "use client";
 
 import { CreateTradeModal } from "@/components/trader/CreateTradeModal";
+import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -10,7 +11,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollableTable } from "@/components/ui/scrollable-table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePagination } from "@/hooks/usePagination";
@@ -20,9 +21,14 @@ import {
   Activity,
   AlertTriangle,
   BarChart3,
+  Building2,
+  Calendar,
   DollarSign,
+  Edit,
+  Globe,
   Home,
   Plus,
+  Settings,
   TrendingDown,
   TrendingUp,
   Wallet,
@@ -124,6 +130,7 @@ export default function TradingAccountDetailPage() {
 
   const tabs = [
     { id: "trades", label: "Operaciones", icon: TrendingUp },
+    { id: "account-info", label: "Información de Cuenta", icon: Settings },
     { id: "analytics", label: "Análisis", icon: BarChart3 },
   ];
 
@@ -327,7 +334,7 @@ export default function TradingAccountDetailPage() {
         onValueChange={setActiveTab}
         className="space-y-4"
       >
-        <TabsList className="grid w-fit grid-cols-2">
+        <TabsList className="grid w-fit grid-cols-3">
           {tabs.map((tab) => (
             <TabsTrigger
               key={tab.id}
@@ -464,6 +471,245 @@ export default function TradingAccountDetailPage() {
             emptyMessage="No se encontraron operaciones"
             emptyIcon={<Activity className="h-12 w-12 text-muted-foreground" />}
           />
+        </TabsContent>
+
+        <TabsContent value="account-info" className="mt-0">
+          <div className="space-y-6">
+            {/* Financial Overview Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold mb-1 text-foreground">
+                      ${Number(account.initialBalance).toLocaleString()}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Balance Inicial
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold mb-1 text-foreground">
+                      ${Number(account.currentBalance).toLocaleString()}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Balance Actual
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold mb-1 text-foreground">
+                      ${Number(account.equity).toLocaleString()}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Equity</div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4">
+                  <div className="text-center">
+                    <div
+                      className={`text-2xl font-bold mb-1 ${
+                        totalPnL >= 0 ? "text-emerald-600" : "text-red-600"
+                      }`}
+                    >
+                      {totalPnL >= 0 ? "+" : ""}${totalPnL.toFixed(2)}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      P&L Total
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Account Details */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <Card>
+                <CardContent className="p-4">
+                  <h3 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wide">
+                    Información Básica
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">
+                        Nombre
+                      </span>
+                      <span className="text-sm font-medium">
+                        {account.accountName}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">
+                        Tipo
+                      </span>
+                      <span className="text-sm font-medium">
+                        {account.accountType === "PROPFIRM"
+                          ? "Propfirm"
+                          : "Broker"}
+                      </span>
+                    </div>
+                    {account.accountNumber && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">
+                          Número
+                        </span>
+                        <span className="text-sm font-medium font-mono">
+                          {account.accountNumber}
+                        </span>
+                      </div>
+                    )}
+                    {account.server && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">
+                          Servidor
+                        </span>
+                        <span className="text-sm font-medium font-mono">
+                          {account.server}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">
+                        Estado
+                      </span>
+                      <span
+                        className={`text-sm font-medium ${
+                          account.status === "active"
+                            ? "text-emerald-600"
+                            : "text-orange-600"
+                        }`}
+                      >
+                        {account.status === "active" ? "Activa" : "Inactiva"}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4">
+                  <h3 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wide">
+                    {account.accountType === "PROPFIRM" ? "Propfirm" : "Broker"}
+                  </h3>
+                  <div className="space-y-3">
+                    {account.propfirm && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">
+                          Propfirm
+                        </span>
+                        <span className="text-sm font-medium">
+                          {account.propfirm.displayName}
+                        </span>
+                      </div>
+                    )}
+                    {account.broker && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">
+                          Broker
+                        </span>
+                        <span className="text-sm font-medium">
+                          {account.broker.displayName}
+                        </span>
+                      </div>
+                    )}
+                    {account.accountTypeRef && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">
+                          Tipo de Cuenta
+                        </span>
+                        <span className="text-sm font-medium">
+                          {account.accountTypeRef.displayName}
+                        </span>
+                      </div>
+                    )}
+                    {account.currentPhase && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">
+                          Fase Actual
+                        </span>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm font-medium">
+                            {account.currentPhase.displayName}
+                          </span>
+                          <Badge
+                            variant={
+                              account.currentPhase.phaseName === "funded"
+                                ? "default"
+                                : "secondary"
+                            }
+                            className="text-xs"
+                          >
+                            {account.currentPhase.phaseName === "funded"
+                              ? "Live"
+                              : "Evaluación"}
+                          </Badge>
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">
+                        Creada
+                      </span>
+                      <span className="text-sm font-medium">
+                        {new Date(account.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Performance Summary */}
+            <Card>
+              <CardContent className="p-4">
+                <h3 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wide">
+                  Rendimiento
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <div className="text-lg font-bold mb-1 text-foreground">
+                      {(
+                        ((Number(account.currentBalance) -
+                          Number(account.initialBalance)) /
+                          Number(account.initialBalance)) *
+                        100
+                      ).toFixed(2)}
+                      %
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Retorno Total
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold mb-1 text-foreground">
+                      {totalTrades}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Operaciones
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold mb-1 text-foreground">
+                      {winRate.toFixed(1)}%
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Win Rate
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="analytics" className="mt-0">

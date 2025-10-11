@@ -72,6 +72,16 @@ enum PaymentProvider {
   CULQI
 }
 
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
 enum SymbolCategory {
   FOREX
   INDICES
@@ -125,6 +135,7 @@ model User {
   sessions Session[]
   accounts Account[]
   userSubscriptions UserSubscription[]
+  userPayments      UserPayment[]
   tradingAccounts   TradingAccount[]
   accountLinks      AccountLink[] @relation("UserAccountLinks")
   userRoles         UserRole[]
@@ -312,7 +323,35 @@ model UserSubscription {
   createdAt               DateTime           @default(now())
   updatedAt               DateTime           @updatedAt
 
+  // Relations
+  payments                UserPayment[]
+
   @@map("user_subscriptions")
+}
+
+model UserPayment {
+  id                      String             @id @default(uuid())
+  userId                  String
+  user                    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscriptionId          String
+  subscription            UserSubscription   @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  paymentProvider         PaymentProvider
+  providerPaymentId       String?
+  amount                  Decimal            @db.Decimal(10, 2)
+  currency                String             @default("USD") @db.VarChar(3)
+  status                  PaymentStatus      @default(PENDING)
+  paymentMethod           String?            // "card", "bank_transfer", "paypal", etc.
+  description             String?            // "Monthly subscription", "Upgrade to Premium", etc.
+  metadata                Json?              // Additional payment provider data
+  paidAt                  DateTime?
+  failedAt                DateTime?
+  refundedAt              DateTime?
+  refundAmount            Decimal?           @db.Decimal(10, 2)
+  refundReason            String?
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+
+  @@map("user_payments")
 }
 
 // ================================

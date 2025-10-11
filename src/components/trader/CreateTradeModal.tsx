@@ -19,8 +19,8 @@ import {
 } from "@/components/ui/select";
 import type { AccountLink } from "@/types/connection";
 import { trpc } from "@/utils/trpc";
-import { TrendingUp } from "lucide-react";
-import { useState } from "react";
+import { ChevronLeft, ChevronRight, TrendingUp } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 interface CreateTradeModalProps {
   connection: AccountLink;
@@ -38,6 +38,60 @@ export function CreateTradeModal({
   const [activeTab, setActiveTab] = useState<"manual" | "import" | "copy">(
     "manual"
   );
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  // Función para verificar si se puede hacer scroll
+  const checkScrollability = () => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } =
+        scrollContainerRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth);
+    }
+  };
+
+  // Función para hacer scroll hacia la izquierda
+  const scrollLeft = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: -200, behavior: "smooth" });
+    }
+  };
+
+  // Función para hacer scroll hacia la derecha
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: 200, behavior: "smooth" });
+    }
+  };
+
+  // Effect para verificar scrollability cuando se monta el componente
+  useEffect(() => {
+    checkScrollability();
+    const handleResize = () => checkScrollability();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Función para validar que solo se ingresen números
+  const handleNumberInput = (value: string) => {
+    // Permite números, punto decimal y números negativos
+    const regex = /^-?[0-9]*\.?[0-9]*$/;
+    return regex.test(value);
+  };
+
+  // Función para manejar cambios en campos numéricos
+  const handleNumericChange = (field: string, value: string) => {
+    if (handleNumberInput(value)) {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: value,
+      }));
+    }
+  };
+
   // Helper function to format date for datetime-local input
   const formatDateForInput = (date: Date) => {
     const year = date.getFullYear();
@@ -50,22 +104,37 @@ export function CreateTradeModal({
 
   const [formData, setFormData] = useState({
     symbol: "",
+    // External trade IDs (positions)
+    propfirmExternalTradeId: "",
+    brokerExternalTradeId: "",
     // Propfirm operation
     propfirmDirection: "buy" as "buy" | "sell",
     propfirmLotSize: "0.1",
     propfirmOpenPrice: "",
     propfirmClosePrice: "",
+    propfirmStopLoss: "1",
+    propfirmTakeProfit: "1",
+    propfirmProfitLoss: "",
+    propfirmCommission: "",
+    propfirmSwap: "",
     propfirmNetProfit: "",
     // Broker operation
     brokerDirection: "sell" as "buy" | "sell", // Opposite by default
     brokerLotSize: "0.1",
     brokerOpenPrice: "",
     brokerClosePrice: "",
+    brokerStopLoss: "1",
+    brokerTakeProfit: "1",
+    brokerProfitLoss: "",
+    brokerCommission: "",
+    brokerSwap: "",
     brokerNetProfit: "",
     // Shared fields
     status: "OPEN" as "OPEN" | "CLOSED",
+    entryMethod: "MANUAL" as "MANUAL" | "API" | "COPY_TRADING",
     openTime: formatDateForInput(new Date()), // Properly formatted datetime-local
     closeTime: "",
+    notes: "",
   });
 
   const { data: symbols } = trpc.symbol.getAll.useQuery({});
@@ -75,19 +144,33 @@ export function CreateTradeModal({
       // Reset form
       setFormData({
         symbol: "",
+        propfirmExternalTradeId: "",
+        brokerExternalTradeId: "",
         propfirmDirection: "buy",
         propfirmLotSize: "0.1",
         propfirmOpenPrice: "",
         propfirmClosePrice: "",
+        propfirmStopLoss: "1",
+        propfirmTakeProfit: "1",
+        propfirmProfitLoss: "",
+        propfirmCommission: "",
+        propfirmSwap: "",
         propfirmNetProfit: "",
         brokerDirection: "sell",
         brokerLotSize: "0.1",
         brokerOpenPrice: "",
         brokerClosePrice: "",
+        brokerStopLoss: "1",
+        brokerTakeProfit: "1",
+        brokerProfitLoss: "",
+        brokerCommission: "",
+        brokerSwap: "",
         brokerNetProfit: "",
         status: "OPEN",
+        entryMethod: "MANUAL",
         openTime: formatDateForInput(new Date()),
         closeTime: "",
+        notes: "",
       });
     },
     onError: (error) => {
@@ -136,6 +219,9 @@ export function CreateTradeModal({
 
     const tradeData = {
       symbolId: formData.symbol,
+      // External trade IDs
+      propfirmExternalTradeId: formData.propfirmExternalTradeId || undefined,
+      brokerExternalTradeId: formData.brokerExternalTradeId || undefined,
       // Propfirm trade data
       propfirmDirection: formData.propfirmDirection,
       propfirmLotSize: Number.parseFloat(formData.propfirmLotSize),
@@ -143,6 +229,21 @@ export function CreateTradeModal({
       propfirmClosePrice: formData.propfirmClosePrice
         ? Number.parseFloat(formData.propfirmClosePrice)
         : undefined,
+      propfirmStopLoss: formData.propfirmStopLoss
+        ? Number.parseFloat(formData.propfirmStopLoss)
+        : undefined,
+      propfirmTakeProfit: formData.propfirmTakeProfit
+        ? Number.parseFloat(formData.propfirmTakeProfit)
+        : undefined,
+      propfirmProfitLoss: formData.propfirmProfitLoss
+        ? Number.parseFloat(formData.propfirmProfitLoss)
+        : 0,
+      propfirmCommission: formData.propfirmCommission
+        ? Number.parseFloat(formData.propfirmCommission)
+        : 0,
+      propfirmSwap: formData.propfirmSwap
+        ? Number.parseFloat(formData.propfirmSwap)
+        : 0,
       propfirmNetProfit: formData.propfirmNetProfit
         ? Number.parseFloat(formData.propfirmNetProfit)
         : 0,
@@ -153,13 +254,30 @@ export function CreateTradeModal({
       brokerClosePrice: formData.brokerClosePrice
         ? Number.parseFloat(formData.brokerClosePrice)
         : undefined,
+      brokerStopLoss: formData.brokerStopLoss
+        ? Number.parseFloat(formData.brokerStopLoss)
+        : undefined,
+      brokerTakeProfit: formData.brokerTakeProfit
+        ? Number.parseFloat(formData.brokerTakeProfit)
+        : undefined,
+      brokerProfitLoss: formData.brokerProfitLoss
+        ? Number.parseFloat(formData.brokerProfitLoss)
+        : 0,
+      brokerCommission: formData.brokerCommission
+        ? Number.parseFloat(formData.brokerCommission)
+        : 0,
+      brokerSwap: formData.brokerSwap
+        ? Number.parseFloat(formData.brokerSwap)
+        : 0,
       brokerNetProfit: formData.brokerNetProfit
         ? Number.parseFloat(formData.brokerNetProfit)
         : 0,
       // Shared fields
       status: formData.status,
+      entryMethod: formData.entryMethod,
       openTime: openTimeDate.toISOString(),
       closeTime: closeTimeDate ? closeTimeDate.toISOString() : undefined,
+      notes: formData.notes || undefined,
       propfirmAccountId: connection.propfirmAccountId,
       brokerAccountId: connection.brokerAccountId,
     };
@@ -175,7 +293,7 @@ export function CreateTradeModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="!max-w-[95vw] !w-[800px] max-h-[85vh] overflow-hidden p-0 bg-transparent border-0 ">
+      <DialogContent className="!max-w-[98vw] !w-[1400px] max-h-[90vh] overflow-hidden p-0 bg-transparent border-0 ">
         {/* Gradient background */}
         <div className="relative bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl overflow-hidden border border-slate-700/50">
           {/* Subtle pattern */}
@@ -239,7 +357,7 @@ export function CreateTradeModal({
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                         <div className="space-y-1">
                           <Label
                             htmlFor="symbol"
@@ -311,6 +429,51 @@ export function CreateTradeModal({
 
                         <div className="space-y-1">
                           <Label
+                            htmlFor="entryMethod"
+                            className="text-slate-200 text-sm"
+                          >
+                            Método de Entrada
+                          </Label>
+                          <Select
+                            value={formData.entryMethod}
+                            onValueChange={(value: string) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                entryMethod: value as
+                                  | "MANUAL"
+                                  | "API"
+                                  | "COPY_TRADING",
+                              }))
+                            }
+                          >
+                            <SelectTrigger className="!bg-slate-700/50 border-slate-600 text-white h-9">
+                              <SelectValue placeholder="Método" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-slate-700 border-slate-600">
+                              <SelectItem
+                                value="MANUAL"
+                                className="text-white hover:bg-slate-600"
+                              >
+                                Manual
+                              </SelectItem>
+                              <SelectItem
+                                value="API"
+                                className="text-white hover:bg-slate-600"
+                              >
+                                API
+                              </SelectItem>
+                              <SelectItem
+                                value="COPY_TRADING"
+                                className="text-white hover:bg-slate-600"
+                              >
+                                Copy Trading
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <Label
                             htmlFor="openTime"
                             className="text-slate-200 text-sm"
                           >
@@ -357,308 +520,568 @@ export function CreateTradeModal({
                     </CardContent>
                   </Card>
 
-                  {/* Trading Operations - Excel-like Layout */}
-                  <div className="space-y-4">
-                    {/* Propfirm Operation */}
-                    <div className="overflow-x-auto">
-                      <Card className="min-w-[500px] bg-slate-800/50 border-slate-700">
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-base text-purple-400 flex items-center">
-                            <div className="h-2 w-2 rounded-full bg-purple-400 mr-2" />
-                            Operación Propfirm
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                          <div className="grid grid-cols-5 gap-4">
-                            <div className="space-y-1">
-                              <Label
-                                htmlFor="propfirmDirection"
-                                className="text-slate-200 text-xs"
-                              >
-                                Dirección *
-                              </Label>
-                              <Select
-                                value={formData.propfirmDirection}
-                                onValueChange={(value: string) =>
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    propfirmDirection: value as "buy" | "sell",
-                                    brokerDirection:
-                                      value === "buy" ? "sell" : "buy",
-                                  }))
-                                }
-                              >
-                                <SelectTrigger className="!bg-slate-700/50 border-slate-600 text-white h-8 text-xs">
-                                  <SelectValue placeholder="Dirección" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-slate-700 border-slate-600">
-                                  <SelectItem
-                                    value="buy"
-                                    className="text-white hover:bg-slate-600 text-xs"
+                  {/* Trading Operations - Horizontal Table Layout */}
+                  <Card className="bg-slate-800/50 border-slate-700">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base text-emerald-400 flex items-center">
+                        <TrendingUp className="h-4 w-4 mr-2" />
+                        Operaciones de Trading
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="relative pb-8">
+                        <div
+                          ref={scrollContainerRef}
+                          className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800"
+                          style={{
+                            scrollbarWidth: "thin",
+                            scrollbarColor: "#475569 #1e293b",
+                          }}
+                          onScroll={checkScrollability}
+                        >
+                          <table className="w-full border-collapse min-w-[1300px]">
+                            <thead>
+                              <tr className="border-b border-slate-600">
+                                <th className="text-center py-3 px-2 text-slate-300 text-sm font-medium w-20">
+                                  Cuenta
+                                </th>
+                                <th className="text-center py-3 px-2 text-slate-300 text-sm font-medium w-24">
+                                  Posición
+                                </th>
+                                <th className="text-center py-3 px-2 text-slate-300 text-sm font-medium w-24">
+                                  Dirección *
+                                </th>
+                                <th className="text-center py-3 px-2 text-slate-300 text-sm font-medium w-20">
+                                  Lotes *
+                                </th>
+                                <th className="text-center py-3 px-2 text-slate-300 text-sm font-medium w-28">
+                                  Apertura *
+                                </th>
+                                <th className="text-center py-3 px-2 text-slate-300 text-sm font-medium w-28">
+                                  Cierre
+                                </th>
+                                <th className="text-center py-3 px-2 text-slate-300 text-sm font-medium w-28">
+                                  Stop Loss
+                                </th>
+                                <th className="text-center py-3 px-2 text-slate-300 text-sm font-medium w-28">
+                                  Take Profit
+                                </th>
+                                <th className="text-center py-3 px-2 text-slate-300 text-sm font-medium w-24">
+                                  P&L Bruto
+                                </th>
+                                <th className="text-center py-3 px-2 text-slate-300 text-sm font-medium w-24">
+                                  Comisión
+                                </th>
+                                <th className="text-center py-3 px-2 text-slate-300 text-sm font-medium w-20">
+                                  Swap
+                                </th>
+                                <th className="text-center py-3 px-2 text-slate-300 text-sm font-medium w-24">
+                                  P&L Neto
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="text-sm">
+                              {/* Propfirm Row */}
+                              <tr className="border-b border-slate-700/50">
+                                <td className="py-3 px-2 text-center w-20">
+                                  <div className="flex items-center justify-center">
+                                    <div className="h-2 w-2 rounded-full bg-purple-400 mr-2" />
+                                    <span className="text-purple-400 font-medium text-xs">
+                                      Propfirm
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="p-0 w-24">
+                                  <Input
+                                    type="text"
+                                    placeholder="159351633"
+                                    value={formData.propfirmExternalTradeId}
+                                    onChange={(e) =>
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        propfirmExternalTradeId: e.target.value,
+                                      }))
+                                    }
+                                    className="!bg-transparent !border-0 !shadow-none text-white placeholder:text-slate-400 h-8 text-xs !p-0 !m-0 focus:!ring-0 focus:!ring-offset-0 focus:!outline-none !px-2 w-full text-center font-mono"
+                                  />
+                                </td>
+                                <td className="p-0 w-24">
+                                  <Select
+                                    value={formData.propfirmDirection}
+                                    onValueChange={(value: string) =>
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        propfirmDirection: value as
+                                          | "buy"
+                                          | "sell",
+                                        brokerDirection:
+                                          value === "buy" ? "sell" : "buy",
+                                      }))
+                                    }
                                   >
-                                    Compra
-                                  </SelectItem>
-                                  <SelectItem
-                                    value="sell"
-                                    className="text-white hover:bg-slate-600 text-xs"
+                                    <SelectTrigger className="!bg-transparent !border-0 !shadow-none text-white h-8 text-xs !p-0 !m-0 focus:!ring-0 focus:!ring-offset-0 focus:!outline-none !px-2 text-center">
+                                      <SelectValue placeholder="Dirección" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-slate-700 border-slate-600">
+                                      <SelectItem
+                                        value="buy"
+                                        className="text-white hover:bg-slate-600 text-xs"
+                                      >
+                                        Compra
+                                      </SelectItem>
+                                      <SelectItem
+                                        value="sell"
+                                        className="text-white hover:bg-slate-600 text-xs"
+                                      >
+                                        Venta
+                                      </SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </td>
+                                <td className="p-0 w-20">
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    min="0.01"
+                                    value={formData.propfirmLotSize}
+                                    onChange={(e) =>
+                                      handleNumericChange(
+                                        "propfirmLotSize",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="!bg-transparent !border-0 !shadow-none text-white placeholder:text-slate-400 h-8 text-xs !p-0 !m-0 focus:!ring-0 focus:!ring-offset-0 focus:!outline-none !px-2 w-full text-center"
+                                    inputMode="decimal"
+                                    pattern="[0-9]*\.?[0-9]*"
+                                    placeholder="0.1"
+                                    required
+                                  />
+                                </td>
+                                <td className="p-0 w-28">
+                                  <Input
+                                    type="number"
+                                    step="0.00001"
+                                    min="0"
+                                    value={formData.propfirmOpenPrice}
+                                    onChange={(e) =>
+                                      handleNumericChange(
+                                        "propfirmOpenPrice",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="!bg-transparent !border-0 !shadow-none text-white placeholder:text-slate-400 h-8 text-xs !p-0 !m-0 focus:!ring-0 focus:!ring-offset-0 focus:!outline-none !px-2 w-full text-center"
+                                    inputMode="decimal"
+                                    pattern="[0-9]*\.?[0-9]*"
+                                    placeholder="1.23456"
+                                    required
+                                  />
+                                </td>
+                                <td className="p-0 w-28">
+                                  <Input
+                                    type="number"
+                                    step="0.00001"
+                                    min="0"
+                                    value={formData.propfirmClosePrice}
+                                    onChange={(e) =>
+                                      handleNumericChange(
+                                        "propfirmClosePrice",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="!bg-transparent !border-0 !shadow-none text-white placeholder:text-slate-400 h-8 text-xs !p-0 !m-0 focus:!ring-0 focus:!ring-offset-0 focus:!outline-none !px-2 w-full text-center"
+                                    inputMode="decimal"
+                                    pattern="[0-9]*\.?[0-9]*"
+                                    placeholder="1.23456"
+                                  />
+                                </td>
+                                <td className="p-0 w-28">
+                                  <Input
+                                    type="number"
+                                    step="0.00001"
+                                    min="0"
+                                    value={formData.propfirmStopLoss}
+                                    onChange={(e) =>
+                                      handleNumericChange(
+                                        "propfirmStopLoss",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="!bg-transparent !border-0 !shadow-none text-white placeholder:text-slate-400 h-8 text-xs !p-0 !m-0 focus:!ring-0 focus:!ring-offset-0 focus:!outline-none !px-2 w-full text-center"
+                                    inputMode="decimal"
+                                    pattern="[0-9]*\.?[0-9]*"
+                                    placeholder="1.23456"
+                                  />
+                                </td>
+                                <td className="p-0 w-28">
+                                  <Input
+                                    type="number"
+                                    step="0.00001"
+                                    min="0"
+                                    value={formData.propfirmTakeProfit}
+                                    onChange={(e) =>
+                                      handleNumericChange(
+                                        "propfirmTakeProfit",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="!bg-transparent !border-0 !shadow-none text-white placeholder:text-slate-400 h-8 text-xs !p-0 !m-0 focus:!ring-0 focus:!ring-offset-0 focus:!outline-none !px-2 w-full text-center"
+                                    inputMode="decimal"
+                                    pattern="[0-9]*\.?[0-9]*"
+                                    placeholder="1.23456"
+                                  />
+                                </td>
+                                <td className="p-0 w-24">
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.propfirmProfitLoss}
+                                    onChange={(e) =>
+                                      handleNumericChange(
+                                        "propfirmProfitLoss",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="!bg-transparent !border-0 !shadow-none text-white placeholder:text-slate-400 h-8 text-xs !p-0 !m-0 focus:!ring-0 focus:!ring-offset-0 focus:!outline-none !px-2 w-full text-center"
+                                    inputMode="decimal"
+                                    pattern="[0-9]*\.?[0-9]*"
+                                    placeholder="0.00"
+                                  />
+                                </td>
+                                <td className="p-0 w-24">
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.propfirmCommission}
+                                    onChange={(e) =>
+                                      handleNumericChange(
+                                        "propfirmCommission",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="!bg-transparent !border-0 !shadow-none text-white placeholder:text-slate-400 h-8 text-xs !p-0 !m-0 focus:!ring-0 focus:!ring-offset-0 focus:!outline-none !px-2 w-full text-center"
+                                    inputMode="decimal"
+                                    pattern="[0-9]*\.?[0-9]*"
+                                    placeholder="0.00"
+                                  />
+                                </td>
+                                <td className="p-0 w-20">
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.propfirmSwap}
+                                    onChange={(e) =>
+                                      handleNumericChange(
+                                        "propfirmSwap",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="!bg-transparent !border-0 !shadow-none text-white placeholder:text-slate-400 h-8 text-xs !p-0 !m-0 focus:!ring-0 focus:!ring-offset-0 focus:!outline-none !px-2 w-full text-center"
+                                    inputMode="decimal"
+                                    pattern="[0-9]*\.?[0-9]*"
+                                    placeholder="0.00"
+                                  />
+                                </td>
+                                <td className="p-0 w-24">
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.propfirmNetProfit}
+                                    onChange={(e) =>
+                                      handleNumericChange(
+                                        "propfirmNetProfit",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="!bg-transparent !border-0 !shadow-none text-white placeholder:text-slate-400 h-8 text-xs !p-0 !m-0 focus:!ring-0 focus:!ring-offset-0 focus:!outline-none !px-2 w-full text-center"
+                                    inputMode="decimal"
+                                    pattern="[0-9]*\.?[0-9]*"
+                                    placeholder="0.00"
+                                  />
+                                </td>
+                              </tr>
+
+                              {/* Broker Row */}
+                              <tr>
+                                <td className="py-3 px-2 text-center w-20">
+                                  <div className="flex items-center justify-center">
+                                    <div className="h-2 w-2 rounded-full bg-blue-400 mr-2" />
+                                    <span className="text-blue-400 font-medium text-xs">
+                                      Broker
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="p-0 w-24">
+                                  <Input
+                                    type="text"
+                                    placeholder="99120719"
+                                    value={formData.brokerExternalTradeId}
+                                    onChange={(e) =>
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        brokerExternalTradeId: e.target.value,
+                                      }))
+                                    }
+                                    className="!bg-transparent !border-0 !shadow-none text-white placeholder:text-slate-400 h-8 text-xs !p-0 !m-0 focus:!ring-0 focus:!ring-offset-0 focus:!outline-none !px-2 w-full text-center font-mono"
+                                  />
+                                </td>
+                                <td className="p-0 w-24">
+                                  <Select
+                                    value={formData.brokerDirection}
+                                    onValueChange={(value: string) =>
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        brokerDirection: value as
+                                          | "buy"
+                                          | "sell",
+                                        propfirmDirection:
+                                          value === "buy" ? "sell" : "buy",
+                                      }))
+                                    }
                                   >
-                                    Venta
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
+                                    <SelectTrigger className="!bg-transparent !border-0 !shadow-none text-white h-8 text-xs !p-0 !m-0 focus:!ring-0 focus:!ring-offset-0 focus:!outline-none !px-2 text-center">
+                                      <SelectValue placeholder="Dirección" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-slate-700 border-slate-600">
+                                      <SelectItem
+                                        value="buy"
+                                        className="text-white hover:bg-slate-600 text-xs"
+                                      >
+                                        Compra
+                                      </SelectItem>
+                                      <SelectItem
+                                        value="sell"
+                                        className="text-white hover:bg-slate-600 text-xs"
+                                      >
+                                        Venta
+                                      </SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </td>
+                                <td className="p-0 w-20">
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    min="0.01"
+                                    value={formData.brokerLotSize}
+                                    onChange={(e) =>
+                                      handleNumericChange(
+                                        "brokerLotSize",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="!bg-transparent !border-0 !shadow-none text-white placeholder:text-slate-400 h-8 text-xs !p-0 !m-0 focus:!ring-0 focus:!ring-offset-0 focus:!outline-none !px-2 w-full text-center"
+                                    inputMode="decimal"
+                                    pattern="[0-9]*\.?[0-9]*"
+                                    placeholder="0.1"
+                                    required
+                                  />
+                                </td>
+                                <td className="p-0 w-28">
+                                  <Input
+                                    type="number"
+                                    step="0.00001"
+                                    min="0"
+                                    value={formData.brokerOpenPrice}
+                                    onChange={(e) =>
+                                      handleNumericChange(
+                                        "brokerOpenPrice",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="!bg-transparent !border-0 !shadow-none text-white placeholder:text-slate-400 h-8 text-xs !p-0 !m-0 focus:!ring-0 focus:!ring-offset-0 focus:!outline-none !px-2 w-full text-center"
+                                    inputMode="decimal"
+                                    pattern="[0-9]*\.?[0-9]*"
+                                    placeholder="1.23456"
+                                    required
+                                  />
+                                </td>
+                                <td className="p-0 w-28">
+                                  <Input
+                                    type="number"
+                                    step="0.00001"
+                                    min="0"
+                                    value={formData.brokerClosePrice}
+                                    onChange={(e) =>
+                                      handleNumericChange(
+                                        "brokerClosePrice",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="!bg-transparent !border-0 !shadow-none text-white placeholder:text-slate-400 h-8 text-xs !p-0 !m-0 focus:!ring-0 focus:!ring-offset-0 focus:!outline-none !px-2 w-full text-center"
+                                    inputMode="decimal"
+                                    pattern="[0-9]*\.?[0-9]*"
+                                    placeholder="1.23456"
+                                  />
+                                </td>
+                                <td className="p-0 w-28">
+                                  <Input
+                                    type="number"
+                                    step="0.00001"
+                                    min="0"
+                                    value={formData.brokerStopLoss}
+                                    onChange={(e) =>
+                                      handleNumericChange(
+                                        "brokerStopLoss",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="!bg-transparent !border-0 !shadow-none text-white placeholder:text-slate-400 h-8 text-xs !p-0 !m-0 focus:!ring-0 focus:!ring-offset-0 focus:!outline-none !px-2 w-full text-center"
+                                    inputMode="decimal"
+                                    pattern="[0-9]*\.?[0-9]*"
+                                    placeholder="1.23456"
+                                  />
+                                </td>
+                                <td className="p-0 w-28">
+                                  <Input
+                                    type="number"
+                                    step="0.00001"
+                                    min="0"
+                                    value={formData.brokerTakeProfit}
+                                    onChange={(e) =>
+                                      handleNumericChange(
+                                        "brokerTakeProfit",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="!bg-transparent !border-0 !shadow-none text-white placeholder:text-slate-400 h-8 text-xs !p-0 !m-0 focus:!ring-0 focus:!ring-offset-0 focus:!outline-none !px-2 w-full text-center"
+                                    inputMode="decimal"
+                                    pattern="[0-9]*\.?[0-9]*"
+                                    placeholder="1.23456"
+                                  />
+                                </td>
+                                <td className="p-0 w-24">
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.brokerProfitLoss}
+                                    onChange={(e) =>
+                                      handleNumericChange(
+                                        "brokerProfitLoss",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="!bg-transparent !border-0 !shadow-none text-white placeholder:text-slate-400 h-8 text-xs !p-0 !m-0 focus:!ring-0 focus:!ring-offset-0 focus:!outline-none !px-2 w-full text-center"
+                                    inputMode="decimal"
+                                    pattern="[0-9]*\.?[0-9]*"
+                                    placeholder="0.00"
+                                  />
+                                </td>
+                                <td className="p-0 w-24">
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.brokerCommission}
+                                    onChange={(e) =>
+                                      handleNumericChange(
+                                        "brokerCommission",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="!bg-transparent !border-0 !shadow-none text-white placeholder:text-slate-400 h-8 text-xs !p-0 !m-0 focus:!ring-0 focus:!ring-offset-0 focus:!outline-none !px-2 w-full text-center"
+                                    inputMode="decimal"
+                                    pattern="[0-9]*\.?[0-9]*"
+                                    placeholder="0.00"
+                                  />
+                                </td>
+                                <td className="p-0 w-20">
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.brokerSwap}
+                                    onChange={(e) =>
+                                      handleNumericChange(
+                                        "brokerSwap",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="!bg-transparent !border-0 !shadow-none text-white placeholder:text-slate-400 h-8 text-xs !p-0 !m-0 focus:!ring-0 focus:!ring-offset-0 focus:!outline-none !px-2 w-full text-center"
+                                    inputMode="decimal"
+                                    pattern="[0-9]*\.?[0-9]*"
+                                    placeholder="0.00"
+                                  />
+                                </td>
+                                <td className="p-0 w-24">
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.brokerNetProfit}
+                                    onChange={(e) =>
+                                      handleNumericChange(
+                                        "brokerNetProfit",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="!bg-transparent !border-0 !shadow-none text-white placeholder:text-slate-400 h-8 text-xs !p-0 !m-0 focus:!ring-0 focus:!ring-offset-0 focus:!outline-none !px-2 w-full text-center"
+                                    inputMode="decimal"
+                                    pattern="[0-9]*\.?[0-9]*"
+                                    placeholder="0.00"
+                                  />
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
 
-                            <div className="space-y-1">
-                              <Label
-                                htmlFor="propfirmLotSize"
-                                className="text-slate-200 text-xs"
-                              >
-                                Lotes *
-                              </Label>
-                              <Input
-                                id="propfirmLotSize"
-                                type="number"
-                                step="0.01"
-                                min="0.01"
-                                value={formData.propfirmLotSize}
-                                onChange={(e) =>
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    propfirmLotSize: e.target.value,
-                                  }))
-                                }
-                                className="!bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 h-8 text-xs"
-                                placeholder="0.1"
-                                required
-                              />
-                            </div>
+                        {/* Botones de navegación */}
+                        {canScrollLeft && (
+                          <button
+                            type="button"
+                            onClick={scrollLeft}
+                            className="absolute left-0 top-1/2 transform -translate-y-1/2 w-6 h-16 bg-gradient-to-r from-slate-800/90 to-transparent hover:from-slate-700/90 z-20 flex items-center justify-center group rounded-r-md"
+                          >
+                            <ChevronLeft className="h-4 w-4 text-slate-400 group-hover:text-white transition-colors" />
+                          </button>
+                        )}
+                        {canScrollRight && (
+                          <button
+                            type="button"
+                            onClick={scrollRight}
+                            className="absolute right-0 top-1/2 transform -translate-y-1/2 w-6 h-16 bg-gradient-to-l from-slate-800/90 to-transparent hover:from-slate-700/90 z-20 flex items-center justify-center group rounded-l-md"
+                          >
+                            <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-white transition-colors" />
+                          </button>
+                        )}
 
-                            <div className="space-y-1">
-                              <Label
-                                htmlFor="propfirmOpenPrice"
-                                className="text-slate-200 text-xs"
-                              >
-                                Apertura *
-                              </Label>
-                              <Input
-                                id="propfirmOpenPrice"
-                                type="number"
-                                step="0.00001"
-                                min="0"
-                                value={formData.propfirmOpenPrice}
-                                onChange={(e) =>
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    propfirmOpenPrice: e.target.value,
-                                  }))
-                                }
-                                className="!bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 h-8 text-xs"
-                                placeholder="1.23456"
-                                required
-                              />
-                            </div>
+                        {/* Indicador de scroll horizontal */}
+                        <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-slate-800/90 px-3 py-1 rounded-full text-xs text-slate-400 border border-slate-600 shadow-lg">
+                          ← Desplázate horizontalmente →
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                            <div className="space-y-1">
-                              <Label
-                                htmlFor="propfirmClosePrice"
-                                className="text-slate-200 text-xs"
-                              >
-                                Cierre
-                              </Label>
-                              <Input
-                                id="propfirmClosePrice"
-                                type="number"
-                                step="0.00001"
-                                min="0"
-                                value={formData.propfirmClosePrice}
-                                onChange={(e) =>
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    propfirmClosePrice: e.target.value,
-                                  }))
-                                }
-                                className="!bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 h-8 text-xs"
-                                placeholder="1.23456"
-                              />
-                            </div>
-
-                            <div className="space-y-1">
-                              <Label
-                                htmlFor="propfirmNetProfit"
-                                className="text-slate-200 text-xs"
-                              >
-                                P&L Neto
-                              </Label>
-                              <Input
-                                id="propfirmNetProfit"
-                                type="number"
-                                step="0.01"
-                                value={formData.propfirmNetProfit}
-                                onChange={(e) =>
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    propfirmNetProfit: e.target.value,
-                                  }))
-                                }
-                                className="!bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 h-8 text-xs"
-                                placeholder="0.00"
-                              />
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-
-                    {/* Broker Operation */}
-                    <div className="overflow-x-auto">
-                      <Card className="min-w-[500px] bg-slate-800/50 border-slate-700">
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-base text-blue-400 flex items-center">
-                            <div className="h-2 w-2 rounded-full bg-blue-400 mr-2" />
-                            Operación Broker
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                          <div className="grid grid-cols-5 gap-4">
-                            <div className="space-y-1">
-                              <Label
-                                htmlFor="brokerDirection"
-                                className="text-slate-200 text-xs"
-                              >
-                                Dirección *
-                              </Label>
-                              <Select
-                                value={formData.brokerDirection}
-                                onValueChange={(value: string) =>
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    brokerDirection: value as "buy" | "sell",
-                                    propfirmDirection:
-                                      value === "buy" ? "sell" : "buy",
-                                  }))
-                                }
-                              >
-                                <SelectTrigger className="!bg-slate-700/50 border-slate-600 text-white h-8 text-xs">
-                                  <SelectValue placeholder="Dirección" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-slate-700 border-slate-600">
-                                  <SelectItem
-                                    value="buy"
-                                    className="text-white hover:bg-slate-600 text-xs"
-                                  >
-                                    Compra
-                                  </SelectItem>
-                                  <SelectItem
-                                    value="sell"
-                                    className="text-white hover:bg-slate-600 text-xs"
-                                  >
-                                    Venta
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            <div className="space-y-1">
-                              <Label
-                                htmlFor="brokerLotSize"
-                                className="text-slate-200 text-xs"
-                              >
-                                Lotes *
-                              </Label>
-                              <Input
-                                id="brokerLotSize"
-                                type="number"
-                                step="0.01"
-                                min="0.01"
-                                value={formData.brokerLotSize}
-                                onChange={(e) =>
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    brokerLotSize: e.target.value,
-                                  }))
-                                }
-                                className="!bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 h-8 text-xs"
-                                placeholder="0.1"
-                                required
-                              />
-                            </div>
-
-                            <div className="space-y-1">
-                              <Label
-                                htmlFor="brokerOpenPrice"
-                                className="text-slate-200 text-xs"
-                              >
-                                Apertura *
-                              </Label>
-                              <Input
-                                id="brokerOpenPrice"
-                                type="number"
-                                step="0.00001"
-                                min="0"
-                                value={formData.brokerOpenPrice}
-                                onChange={(e) =>
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    brokerOpenPrice: e.target.value,
-                                  }))
-                                }
-                                className="!bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 h-8 text-xs"
-                                placeholder="1.23456"
-                                required
-                              />
-                            </div>
-
-                            <div className="space-y-1">
-                              <Label
-                                htmlFor="brokerClosePrice"
-                                className="text-slate-200 text-xs"
-                              >
-                                Cierre
-                              </Label>
-                              <Input
-                                id="brokerClosePrice"
-                                type="number"
-                                step="0.00001"
-                                min="0"
-                                value={formData.brokerClosePrice}
-                                onChange={(e) =>
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    brokerClosePrice: e.target.value,
-                                  }))
-                                }
-                                className="!bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 h-8 text-xs"
-                                placeholder="1.23456"
-                              />
-                            </div>
-
-                            <div className="space-y-1">
-                              <Label
-                                htmlFor="brokerNetProfit"
-                                className="text-slate-200 text-xs"
-                              >
-                                P&L Neto
-                              </Label>
-                              <Input
-                                id="brokerNetProfit"
-                                type="number"
-                                step="0.01"
-                                value={formData.brokerNetProfit}
-                                onChange={(e) =>
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    brokerNetProfit: e.target.value,
-                                  }))
-                                }
-                                className="!bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 h-8 text-xs"
-                                placeholder="0.00"
-                              />
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </div>
+                  {/* Notes Section */}
+                  <Card className="bg-slate-800/50 border-slate-700">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm text-emerald-400 flex items-center">
+                        <TrendingUp className="h-4 w-4 mr-2" />
+                        Notas Adicionales
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="notes"
+                          className="text-slate-200 text-sm"
+                        >
+                          Notas (Opcional)
+                        </Label>
+                        <textarea
+                          id="notes"
+                          value={formData.notes}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              notes: e.target.value,
+                            }))
+                          }
+                          className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-md text-white placeholder:text-slate-400 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                          placeholder="Agrega notas adicionales sobre esta operación..."
+                          rows={3}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
 
                   {/* Account Information */}
                   <Card className="bg-slate-800/50 border-slate-700">

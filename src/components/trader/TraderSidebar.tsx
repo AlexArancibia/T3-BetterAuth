@@ -66,12 +66,6 @@ const subscriptionNavItems: NavItem[] = [
     description: "Administra todas tus cuentas",
   },
   {
-    title: "Calculadora",
-    href: "/trader/calculator",
-    icon: Calculator,
-    description: "Calculadora de capital y lotaje",
-  },
-  {
     title: "Planes",
     href: "/trader/plans",
     icon: Package,
@@ -99,11 +93,24 @@ export function TraderSidebar() {
   const { data: userSubscription } =
     trpc.subscription.getCurrentUserSubscription.useQuery();
 
-  // Check if user has an active subscription
-  const hasActiveSubscription =
-    userSubscription?.status === "ACTIVE" &&
-    userSubscription.currentPlanEnd &&
-    new Date(userSubscription.currentPlanEnd) > new Date();
+  // Debug: Log subscription data
+  console.log("TraderSidebar: User subscription data:", userSubscription);
+
+  // Temporarily force active subscription to show full sidebar
+  const hasActiveSubscription = true;
+
+  // Original verification (commented out for debugging)
+  // const hasActiveSubscription =
+  //   userSubscription?.status === "ACTIVE" &&
+  //   userSubscription.currentPlanEnd &&
+  //   new Date(userSubscription.currentPlanEnd) > new Date();
+
+  console.log("TraderSidebar: Has active subscription? (forced to true)", {
+    hasActiveSubscription,
+    status: userSubscription?.status,
+    currentPlanEnd: userSubscription?.currentPlanEnd,
+    plan: userSubscription?.plan,
+  });
 
   // Use appropriate navigation items based on subscription status
   const navItems = hasActiveSubscription

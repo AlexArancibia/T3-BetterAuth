@@ -60,12 +60,6 @@ const traderNavItems: NavItem[] = [
     icon: Wallet,
     description: "Administra todas tus cuentas",
   },
-  {
-    title: "Calculadora",
-    href: "/trader/calculator",
-    icon: Calculator,
-    description: "Calculadora de capital y lotaje",
-  },
 ];
 
 export default function GlobalNavbar() {

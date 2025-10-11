@@ -479,16 +479,6 @@ export default function TraderDashboard() {
                     Ver Cuentas
                   </Button>
                 </Link>
-                <Link href="/trader/calculator">
-                  <Button
-                    className="w-full justify-start"
-                    variant="ghost"
-                    size="sm"
-                  >
-                    <BarChart3 className="h-4 w-4 mr-2" />
-                    Calculadora
-                  </Button>
-                </Link>
                 <Link href="/trader/connections">
                   <Button
                     className="w-full justify-start"

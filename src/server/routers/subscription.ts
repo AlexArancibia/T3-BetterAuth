@@ -218,4 +218,236 @@ export const subscriptionRouter = router({
         totalPages: Math.ceil(total / limit),
       };
     }),
+
+  // Get subscription with payments
+  getWithPayments: protectedProcedure
+    .input(z.object({ subscriptionId: z.string() }))
+    .query(async ({ input, ctx }) => {
+      const subscription = await prisma.userSubscription.findUnique({
+        where: { id: input.subscriptionId },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          payments: {
+            orderBy: { createdAt: "desc" },
+          },
+        },
+      });
+
+      if (!subscription) {
+        throw new Error("Suscripción no encontrada");
+      }
+
+      // Check if user has permission to view this subscription
+      const canManageUsers = await hasPermission(
+        ctx.user.id,
+        PermissionAction.READ,
+        PermissionResource.USER
+      );
+
+      if (subscription.userId !== ctx.user.id && !canManageUsers) {
+        throw new Error("No tienes permisos para ver esta suscripción");
+      }
+
+      return subscription;
+    }),
+
+  // Create subscription with initial payment
+  createWithPayment: protectedProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        plan: z.enum(["FREE", "BASIC", "PREMIUM", "ENTERPRISE"]),
+        paymentProvider: z.enum(["STRIPE", "PAYPAL", "MERCADOPAGO", "CULQI"]),
+        amount: z.number().positive(),
+        currency: z.string().default("USD"),
+        paymentMethod: z.string().optional(),
+        description: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      // Check if user has permission to create subscriptions for other users
+      const canManageUsers = await hasPermission(
+        ctx.user.id,
+        PermissionAction.MANAGE,
+        PermissionResource.USER
+      );
+
+      if (input.userId !== ctx.user.id && !canManageUsers) {
+        throw new Error(
+          "No tienes permisos para crear suscripciones para este usuario"
+        );
+      }
+
+      // Calculate subscription dates
+      const now = new Date();
+      const planEnd = new Date();
+      planEnd.setMonth(planEnd.getMonth() + 1); // Default 1 month
+
+      // Create subscription and payment in a transaction
+      const result = await prisma.$transaction(async (tx) => {
+        // Create subscription
+        const subscription = await tx.userSubscription.create({
+          data: {
+            userId: input.userId,
+            plan: input.plan,
+            status: input.plan === "FREE" ? "ACTIVE" : "TRIALING",
+            paymentProvider: input.paymentProvider,
+            currentPlanStart: now,
+            currentPlanEnd: planEnd,
+          },
+        });
+
+        // Create initial payment (if not FREE)
+        let payment = null;
+        if (input.plan !== "FREE") {
+          payment = await tx.userPayment.create({
+            data: {
+              userId: input.userId,
+              subscriptionId: subscription.id,
+              paymentProvider: input.paymentProvider,
+              amount: input.amount,
+              currency: input.currency,
+              paymentMethod: input.paymentMethod,
+              description:
+                input.description || `Initial payment for ${input.plan} plan`,
+              status: "COMPLETED",
+              paidAt: now,
+            },
+          });
+
+          // Update subscription status to ACTIVE after successful payment
+          await tx.userSubscription.update({
+            where: { id: subscription.id },
+            data: { status: "ACTIVE" },
+          });
+        }
+
+        return { subscription, payment };
+      });
+
+      return result;
+    }),
+
+  // Cancel subscription
+  cancel: protectedProcedure
+    .input(
+      z.object({ subscriptionId: z.string(), reason: z.string().optional() })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const subscription = await prisma.userSubscription.findUnique({
+        where: { id: input.subscriptionId },
+        include: {
+          user: {
+            select: {
+              id: true,
+            },
+          },
+        },
+      });
+
+      if (!subscription) {
+        throw new Error("Suscripción no encontrada");
+      }
+
+      // Check if user has permission to cancel this subscription
+      const canManageUsers = await hasPermission(
+        ctx.user.id,
+        PermissionAction.MANAGE,
+        PermissionResource.USER
+      );
+
+      if (subscription.userId !== ctx.user.id && !canManageUsers) {
+        throw new Error("No tienes permisos para cancelar esta suscripción");
+      }
+
+      const updatedSubscription = await prisma.userSubscription.update({
+        where: { id: input.subscriptionId },
+        data: {
+          status: "CANCELED",
+          updatedAt: new Date(),
+        },
+      });
+
+      return updatedSubscription;
+    }),
+
+  // Get subscription statistics
+  getStats: protectedProcedure
+    .input(z.object({ userId: z.string().optional() }))
+    .query(async ({ input, ctx }) => {
+      const userId = input.userId || ctx.user.id;
+
+      // Check if user has permission to view other users' subscription stats
+      const canManageUsers = await hasPermission(
+        ctx.user.id,
+        PermissionAction.READ,
+        PermissionResource.USER
+      );
+
+      if (userId !== ctx.user.id && !canManageUsers) {
+        throw new Error(
+          "No tienes permisos para ver las estadísticas de suscripciones de este usuario"
+        );
+      }
+
+      const [
+        totalSubscriptions,
+        activeSubscriptions,
+        canceledSubscriptions,
+        totalRevenue,
+        currentSubscription,
+      ] = await Promise.all([
+        prisma.userSubscription.count({
+          where: { userId },
+        }),
+        prisma.userSubscription.count({
+          where: {
+            userId,
+            status: "ACTIVE",
+          },
+        }),
+        prisma.userSubscription.count({
+          where: {
+            userId,
+            status: "CANCELED",
+          },
+        }),
+        prisma.userPayment.aggregate({
+          where: {
+            userId,
+            status: "COMPLETED",
+          },
+          _sum: { amount: true },
+        }),
+        prisma.userSubscription.findFirst({
+          where: { userId },
+          orderBy: { createdAt: "desc" },
+          include: {
+            payments: {
+              where: { status: "COMPLETED" },
+              orderBy: { createdAt: "desc" },
+              take: 1,
+            },
+          },
+        }),
+      ]);
+
+      return {
+        totalSubscriptions,
+        activeSubscriptions,
+        canceledSubscriptions,
+        totalRevenue: totalRevenue._sum.amount || 0,
+        currentSubscription,
+        retentionRate:
+          totalSubscriptions > 0
+            ? (activeSubscriptions / totalSubscriptions) * 100
+            : 0,
+      };
+    }),
 });

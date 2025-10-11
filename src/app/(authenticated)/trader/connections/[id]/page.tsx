@@ -15,11 +15,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ScrollableTable } from "@/components/ui/scrollable-table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePagination } from "@/hooks/usePagination";
-import type {
-  CalculationsTabProps,
-  Trade,
-  TradeStats,
-} from "@/types/connection";
+import type { CalculationsTabProps, Trade } from "@/types/connection";
 import { trpc } from "@/utils/trpc";
 import {
   Activity,
@@ -34,101 +30,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
 
-// Helper function to calculate trade statistics
-function calculateTradeStats(
-  propfirmTrades: Trade[],
-  brokerTrades: Trade[]
-): TradeStats {
-  const allTrades = [...propfirmTrades, ...brokerTrades];
-
-  const totalTrades = allTrades.length;
-  const openTrades = allTrades.filter(
-    (trade) => trade.status === "OPEN"
-  ).length;
-  const closedTrades = allTrades.filter(
-    (trade) => trade.status === "CLOSED"
-  ).length;
-
-  const winningTrades = allTrades.filter(
-    (trade) => trade.status === "CLOSED" && Number(trade.netProfit || 0) > 0
-  ).length;
-
-  const losingTrades = allTrades.filter(
-    (trade) => trade.status === "CLOSED" && Number(trade.netProfit || 0) < 0
-  ).length;
-
-  const totalPnL = allTrades.reduce(
-    (sum: number, trade) => sum + Number(trade.netProfit || 0),
-    0
-  );
-  const winRate = closedTrades > 0 ? (winningTrades / closedTrades) * 100 : 0;
-
-  const propfirmPnL = propfirmTrades.reduce(
-    (sum: number, trade) => sum + Number(trade.netProfit || 0),
-    0
-  );
-  const brokerPnL = brokerTrades.reduce(
-    (sum: number, trade) => sum + Number(trade.netProfit || 0),
-    0
-  );
-
-  const avgWin =
-    winningTrades > 0
-      ? allTrades
-          .filter(
-            (trade) =>
-              trade.status === "CLOSED" && Number(trade.netProfit || 0) > 0
-          )
-          .reduce(
-            (sum: number, trade) => sum + Number(trade.netProfit || 0),
-            0
-          ) / winningTrades
-      : 0;
-
-  const avgLoss =
-    losingTrades > 0
-      ? Math.abs(
-          allTrades
-            .filter(
-              (trade) =>
-                trade.status === "CLOSED" && Number(trade.netProfit || 0) < 0
-            )
-            .reduce(
-              (sum: number, trade) => sum + Number(trade.netProfit || 0),
-              0
-            ) / losingTrades
-        )
-      : 0;
-
-  const profitFactor = avgLoss > 0 ? avgWin / avgLoss : 0;
-  const maxDrawdown =
-    allTrades.length > 0
-      ? Math.min(...allTrades.map((trade) => Number(trade.netProfit || 0)))
-      : 0;
-
-  return {
-    totalTrades,
-    openTrades,
-    closedTrades,
-    winningTrades,
-    losingTrades,
-    totalPnL,
-    winRate,
-    avgWin,
-    avgLoss,
-    profitFactor,
-    maxDrawdown,
-    propfirmPnL,
-    brokerPnL,
-  };
-}
-
 function CalculationsTab({ connection }: CalculationsTabProps) {
   if (!connection) return null;
-
-  const propfirmTrades = connection.propfirmAccount?.trades || [];
-  const brokerTrades = connection.brokerAccount?.trades || [];
-  const stats = calculateTradeStats(propfirmTrades, brokerTrades);
 
   return (
     <div className="space-y-6 relative">
@@ -136,150 +39,9 @@ function CalculationsTab({ connection }: CalculationsTabProps) {
         {/* Trading Calculator */}
         <Card>
           <CardContent className="p-6">
-            <TradingCalculator />
+            <TradingCalculator connection={connection} />
           </CardContent>
         </Card>
-
-        {/* Performance Metrics - Solo si hay operaciones */}
-        {stats.totalTrades > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-center">
-                  <div
-                    className={`text-2xl font-bold mb-1 ${stats.totalPnL >= 0 ? "text-emerald-600" : "text-red-600"}`}
-                  >
-                    {stats.totalPnL >= 0 ? "+" : ""}${stats.totalPnL.toFixed(2)}
-                  </div>
-                  <div className="text-sm text-muted-foreground">P&L Total</div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-foreground mb-1">
-                    {stats.closedTrades > 0 ? stats.winRate.toFixed(1) : "0"}%
-                  </div>
-                  <div className="text-sm text-muted-foreground">Win Rate</div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-foreground mb-1">
-                    {stats.totalTrades}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    Operaciones
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-foreground mb-1">
-                    {stats.profitFactor.toFixed(2)}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    Profit Factor
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Account Summary - Solo si hay operaciones */}
-        {stats.totalTrades > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Card>
-              <CardContent className="p-4">
-                <h3 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wide">
-                  Propfirm
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">
-                      Operaciones
-                    </span>
-                    <span className="text-sm font-medium">
-                      {propfirmTrades.length}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">P&L</span>
-                    <span
-                      className={`text-sm font-medium ${stats.propfirmPnL >= 0 ? "text-emerald-600" : "text-red-600"}`}
-                    >
-                      {stats.propfirmPnL >= 0 ? "+" : ""}$
-                      {stats.propfirmPnL.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <h3 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wide">
-                  Broker
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">
-                      Operaciones
-                    </span>
-                    <span className="text-sm font-medium">
-                      {brokerTrades.length}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">P&L</span>
-                    <span
-                      className={`text-sm font-medium ${stats.brokerPnL >= 0 ? "text-emerald-600" : "text-red-600"}`}
-                    >
-                      {stats.brokerPnL >= 0 ? "+" : ""}$
-                      {stats.brokerPnL.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* No Data State */}
-        {stats.totalTrades === 0 && (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <Activity className="h-8 w-8 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-foreground mb-2">
-                Sin Operaciones
-              </h3>
-              <p className="text-sm text-muted-foreground mb-6">
-                Registra operaciones para ver análisis
-              </p>
-              <Button
-                onClick={() => {
-                  const event = new CustomEvent("switchTab", {
-                    detail: "trades",
-                  });
-                  window.dispatchEvent(event);
-                }}
-                className="bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90 text-white border-0"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Nueva Operación
-              </Button>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   );

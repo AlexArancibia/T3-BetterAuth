@@ -432,4 +432,50 @@ export const propfirmRulesConfigRouter = router({
         data: { isActive: false },
       });
     }),
+
+  // Get rules configuration for a specific trading account
+  getByTradingAccount: protectedProcedure
+    .input(
+      z.object({
+        propfirmId: z.string(),
+        accountTypeId: z.string(),
+        phaseId: z.string(),
+      })
+    )
+    .query(async ({ input }) => {
+      const rulesConfig = await prisma.propfirmRulesConfiguration.findFirst({
+        where: {
+          propfirmId: input.propfirmId,
+          accountTypeId: input.accountTypeId,
+          phaseId: input.phaseId,
+          isActive: true,
+        },
+        include: {
+          propfirm: {
+            select: {
+              id: true,
+              name: true,
+              displayName: true,
+            },
+          },
+          accountType: {
+            select: {
+              id: true,
+              typeName: true,
+              displayName: true,
+              initialBalance: true,
+            },
+          },
+          phase: {
+            select: {
+              id: true,
+              phaseName: true,
+              displayName: true,
+            },
+          },
+        },
+      });
+
+      return rulesConfig;
+    }),
 });

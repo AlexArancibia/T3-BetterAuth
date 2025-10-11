@@ -430,4 +430,252 @@ export const symbolConfigRouter = router({
       });
       return updated;
     }),
+
+  // Get symbol configurations for a specific trading account
+  getByTradingAccount: protectedProcedure
+    .input(
+      z.object({
+        accountId: z.string(),
+        category: z
+          .enum(["FOREX", "INDICES", "COMMODITIES", "CRYPTO", "STOCKS"])
+          .optional(),
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      // Verify account ownership
+      const tradingAccount = await prisma.tradingAccount.findFirst({
+        where: {
+          id: input.accountId,
+          userId: ctx.user.id,
+        },
+        include: {
+          propfirm: true,
+          broker: true,
+        },
+      });
+
+      if (!tradingAccount) {
+        throw new Error("Trading account not found or access denied");
+      }
+
+      // Build where condition based on account type
+      const whereCondition: {
+        isAvailable: boolean;
+        symbol?: { category: string };
+        propfirmId?: string;
+        brokerId?: string;
+      } = {
+        isAvailable: true,
+      };
+
+      // Add category filter if provided
+      if (input.category) {
+        whereCondition.symbol = {
+          category: input.category,
+        };
+      }
+
+      // Filter by propfirm or broker based on account type
+      if (
+        tradingAccount.accountType === "PROPFIRM" &&
+        tradingAccount.propfirmId
+      ) {
+        whereCondition.propfirmId = tradingAccount.propfirmId;
+      } else if (
+        tradingAccount.accountType === "BROKER" &&
+        tradingAccount.brokerId
+      ) {
+        whereCondition.brokerId = tradingAccount.brokerId;
+      }
+
+      const configs = await prisma.symbolConfiguration.findMany({
+        where: whereCondition,
+        select: {
+          id: true,
+          propfirmId: true,
+          brokerId: true,
+          symbolId: true,
+          commissionPerLot: true,
+          pipValuePerLot: true,
+          pipTicks: true,
+          spreadTypical: true,
+          spreadRecommended: true,
+          isAvailable: true,
+          createdAt: true,
+          updatedAt: true,
+          propfirm: {
+            select: {
+              name: true,
+              displayName: true,
+            },
+          },
+          broker: {
+            select: {
+              name: true,
+              displayName: true,
+            },
+          },
+          symbol: {
+            select: {
+              symbol: true,
+              displayName: true,
+              category: true,
+              baseCurrency: true,
+              quoteCurrency: true,
+              pipDecimalPosition: true,
+            },
+          },
+        },
+        orderBy: [
+          { symbol: { category: "asc" } },
+          { symbol: { symbol: "asc" } },
+        ],
+      });
+
+      return {
+        tradingAccount: {
+          id: tradingAccount.id,
+          accountName: tradingAccount.accountName,
+          accountType: tradingAccount.accountType,
+          propfirm: tradingAccount.propfirm,
+          broker: tradingAccount.broker,
+        },
+        symbolConfigurations: configs,
+      };
+    }),
+
+  // Get symbol configurations for both propfirm and broker in a connection
+  getByConnection: protectedProcedure
+    .input(
+      z.object({
+        propfirmId: z.string().optional(),
+        brokerId: z.string().optional(),
+        category: z
+          .enum(["FOREX", "INDICES", "COMMODITIES", "CRYPTO", "STOCKS"])
+          .optional(),
+      })
+    )
+    .query(async ({ input }) => {
+      const { propfirmId, brokerId, category } = input;
+
+      // Build where conditions for both propfirm and broker
+      const baseWhereCondition: {
+        isAvailable: boolean;
+        symbol?: { category: string };
+      } = {
+        isAvailable: true,
+      };
+
+      // Add category filter if provided
+      if (category) {
+        baseWhereCondition.symbol = {
+          category: category,
+        };
+      }
+
+      // Get propfirm configurations
+      const propfirmConfigs = propfirmId
+        ? await prisma.symbolConfiguration.findMany({
+            where: {
+              ...baseWhereCondition,
+              propfirmId: propfirmId,
+            },
+            select: {
+              id: true,
+              propfirmId: true,
+              brokerId: true,
+              symbolId: true,
+              commissionPerLot: true,
+              pipValuePerLot: true,
+              pipTicks: true,
+              spreadTypical: true,
+              spreadRecommended: true,
+              isAvailable: true,
+              createdAt: true,
+              updatedAt: true,
+              propfirm: {
+                select: {
+                  name: true,
+                  displayName: true,
+                },
+              },
+              broker: {
+                select: {
+                  name: true,
+                  displayName: true,
+                },
+              },
+              symbol: {
+                select: {
+                  symbol: true,
+                  displayName: true,
+                  category: true,
+                  baseCurrency: true,
+                  quoteCurrency: true,
+                  pipDecimalPosition: true,
+                },
+              },
+            },
+            orderBy: [
+              { symbol: { category: "asc" } },
+              { symbol: { symbol: "asc" } },
+            ],
+          })
+        : [];
+
+      // Get broker configurations
+      const brokerConfigs = brokerId
+        ? await prisma.symbolConfiguration.findMany({
+            where: {
+              ...baseWhereCondition,
+              brokerId: brokerId,
+            },
+            select: {
+              id: true,
+              propfirmId: true,
+              brokerId: true,
+              symbolId: true,
+              commissionPerLot: true,
+              pipValuePerLot: true,
+              pipTicks: true,
+              spreadTypical: true,
+              spreadRecommended: true,
+              isAvailable: true,
+              createdAt: true,
+              updatedAt: true,
+              propfirm: {
+                select: {
+                  name: true,
+                  displayName: true,
+                },
+              },
+              broker: {
+                select: {
+                  name: true,
+                  displayName: true,
+                },
+              },
+              symbol: {
+                select: {
+                  symbol: true,
+                  displayName: true,
+                  category: true,
+                  baseCurrency: true,
+                  quoteCurrency: true,
+                  pipDecimalPosition: true,
+                },
+              },
+            },
+            orderBy: [
+              { symbol: { category: "asc" } },
+              { symbol: { symbol: "asc" } },
+            ],
+          })
+        : [];
+
+      return {
+        propfirmConfigurations: propfirmConfigs,
+        brokerConfigurations: brokerConfigs,
+      };
+    }),
 });

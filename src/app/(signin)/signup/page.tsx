@@ -103,7 +103,7 @@ export default function SignUpPage() {
         email: data.email,
         password: data.password,
         name: data.name,
-        callbackURL: "/dashboard",
+        callbackURL: "/", // Let RoleBasedRedirect handle the redirection
       });
 
       if (error) {
@@ -114,9 +114,8 @@ export default function SignUpPage() {
         toast.success("¡Cuenta creada exitosamente!", {
           description: "Revisa tu email para confirmar tu cuenta.",
         });
-        setTimeout(() => {
-          router.push("/");
-        }, 2000);
+        // Let RoleBasedRedirect handle the redirection based on user role
+        router.push("/");
       }
     } catch (_error) {
       toast.error("Error de red o servidor");

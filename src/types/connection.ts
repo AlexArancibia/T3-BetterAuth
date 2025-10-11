@@ -77,3 +77,46 @@ export interface TradeStats {
   propfirmPnL: number;
   brokerPnL: number;
 }
+
+// Extended types for trading calculator
+export interface PropfirmAccount extends TradingAccount {
+  propfirmId?: string;
+  accountTypeId?: string;
+  currentPhaseId?: string;
+}
+
+export interface BrokerAccount extends TradingAccount {
+  brokerId?: string;
+}
+
+export interface ExtendedAccountLink
+  extends Omit<AccountLink, "propfirmAccount" | "brokerAccount"> {
+  propfirmAccount: PropfirmAccount;
+  brokerAccount: BrokerAccount;
+}
+
+export interface SymbolConfig {
+  id: string;
+  symbolId: string;
+  symbol: {
+    symbol: string;
+    displayName: string;
+    category: string;
+    baseCurrency: string;
+    quoteCurrency: string;
+    pipDecimalPosition: number;
+  };
+  pipValuePerLot: string | number;
+  pipTicks: number;
+  commissionPerLot?: string | number | null;
+  spreadTypical?: string | number | null;
+  isAvailable: boolean;
+}
+
+export interface SymbolData {
+  symbolId: string;
+  symbol: string;
+  displayName: string;
+  propfirmConfig?: SymbolConfig;
+  brokerConfig?: SymbolConfig;
+}

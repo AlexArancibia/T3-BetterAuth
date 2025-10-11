@@ -2,6 +2,7 @@ import { router } from "../trpc";
 import { accountLinkRouter } from "./accountLink";
 import { brokerRouter } from "./broker";
 import { companyInfoRouter } from "./companyInfo";
+import { paymentRouter } from "./payment";
 import { propfirmRouter } from "./propfirm";
 import { propfirmAccountTypeRouter } from "./propfirmAccountType";
 import { propfirmPhaseRouter } from "./propfirmPhase";
@@ -18,6 +19,7 @@ export const appRouter = router({
   user: userRouter,
   rbac: rbacRouter,
   subscription: subscriptionRouter,
+  payment: paymentRouter,
   companyInfo: companyInfoRouter,
   propfirm: propfirmRouter,
   propfirmPhase: propfirmPhaseRouter,

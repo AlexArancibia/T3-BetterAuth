@@ -72,7 +72,7 @@ export default function SignInPage() {
       const { error } = await authClient.signIn.email({
         email: data.email,
         password: data.password,
-        callbackURL: "/dashboard",
+        callbackURL: "/",
         rememberMe: true,
       });
 
@@ -84,7 +84,8 @@ export default function SignInPage() {
         toast.success("Bienvenido", {
           description: "Sesión iniciada correctamente",
         });
-        router.push("/dashboard");
+        // Let RoleBasedRedirect handle the redirection
+        router.push("/");
       }
     } catch (_error) {
       toast.error("Error de red o servidor");

@@ -150,6 +150,8 @@ export const accountLinkRouter = router({
             include: {
               propfirm: true,
               broker: true,
+              accountTypeRef: true,
+              currentPhase: true,
               trades: {
                 orderBy: { createdAt: "desc" },
                 include: {
@@ -162,6 +164,8 @@ export const accountLinkRouter = router({
             include: {
               propfirm: true,
               broker: true,
+              accountTypeRef: true,
+              currentPhase: true,
               trades: {
                 orderBy: { createdAt: "desc" },
                 include: {

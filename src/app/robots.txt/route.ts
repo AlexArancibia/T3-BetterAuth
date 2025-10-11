@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 
 export async function GET() {
+  const siteUrl = process.env.SITE_URL || "https://example.com";
   const robotsTxt = `User-agent: *
 Allow: /
 Disallow: /api/
 Disallow: /admin/
 Disallow: /dashboard/
 
-Sitemap: ${process.env.SITE_URL!}/sitemap.xml`;
+Sitemap: ${siteUrl}/sitemap.xml`;
 
   return new NextResponse(robotsTxt, {
     headers: {

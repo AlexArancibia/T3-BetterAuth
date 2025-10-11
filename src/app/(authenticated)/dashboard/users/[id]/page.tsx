@@ -1,5 +1,7 @@
 "use client";
 
+import { PaymentManager } from "@/components/PaymentManager";
+import { SubscriptionManager } from "@/components/SubscriptionManager";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -124,6 +126,24 @@ export default function UserDetailPage() {
   const { data: userAccountLinks } = trpc.accountLink.getByUserId.useQuery({
     userId,
   });
+
+  // Get user subscriptions
+  const { data: userSubscriptions } = trpc.subscription.getByUserId.useQuery({
+    userId,
+  });
+
+  // Get user payments
+  const { data: userPayments } = trpc.payment.getByUserId.useQuery({
+    userId,
+    page: 1,
+    limit: 10,
+  });
+
+  // Get subscription statistics
+  trpc.subscription.getStats.useQuery({ userId });
+
+  // Get payment statistics
+  trpc.payment.getStats.useQuery({ userId });
 
   const isLoading = userLoading || rolesLoading;
 
@@ -614,8 +634,9 @@ export default function UserDetailPage() {
         defaultValue={isTrader ? "accounts" : "overview"}
         className="space-y-6"
       >
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Información</TabsTrigger>
+          <TabsTrigger value="subscriptions">Suscripciones</TabsTrigger>
           {isTrader && <TabsTrigger value="accounts">Cuentas</TabsTrigger>}
           {isTrader && <TabsTrigger value="trades">Trades</TabsTrigger>}
         </TabsList>
@@ -679,6 +700,30 @@ export default function UserDetailPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Subscriptions Tab */}
+        <TabsContent value="subscriptions" className="space-y-6">
+          {/* Subscription Management */}
+          <SubscriptionManager
+            userId={userId}
+            subscriptions={userSubscriptions ? [userSubscriptions] : []}
+            onRefresh={() => {
+              // Refresh all subscription-related data
+              window.location.reload();
+            }}
+          />
+
+          {/* Payment Management */}
+          <PaymentManager
+            userId={userId}
+            subscriptions={userSubscriptions ? [userSubscriptions] : []}
+            payments={userPayments?.payments || []}
+            onRefresh={() => {
+              // Refresh all payment-related data
+              window.location.reload();
+            }}
+          />
         </TabsContent>
 
         {/* Accounts Tab */}

@@ -30,8 +30,6 @@ interface CreateTradingAccountForm {
   brokerId: string;
   accountTypeId: string;
   initialBalance: number;
-  currentBalance: number;
-  equity: number;
   currentPhaseId: string;
   status: string;
 }
@@ -63,8 +61,6 @@ export function CreateTradingAccountDialog({
     brokerId: "",
     accountTypeId: "",
     initialBalance: 100000,
-    currentBalance: 100000,
-    equity: 100000,
     currentPhaseId: "",
     status: "active",
   });
@@ -100,8 +96,6 @@ export function CreateTradingAccountDialog({
       brokerId: "",
       accountTypeId: "",
       initialBalance: 100000,
-      currentBalance: 100000,
-      equity: 100000,
       currentPhaseId: "",
       status: "active",
     });
@@ -142,8 +136,8 @@ export function CreateTradingAccountDialog({
         formData.accountType === "BROKER" ? formData.brokerId : undefined,
       accountTypeId: formData.accountTypeId || undefined,
       initialBalance: formData.initialBalance,
-      currentBalance: formData.currentBalance || formData.initialBalance,
-      equity: formData.equity || formData.initialBalance,
+      currentBalance: formData.initialBalance, // Usar initialBalance como currentBalance
+      equity: formData.initialBalance, // Usar initialBalance como equity
       currentPhaseId: formData.currentPhaseId || undefined,
       status: formData.status,
     };
@@ -321,6 +315,8 @@ export function CreateTradingAccountDialog({
                             formData.accountType === "PROPFIRM" ? value : "",
                           brokerId:
                             formData.accountType === "BROKER" ? value : "",
+                          accountTypeId: "", // Reset account type when propfirm changes
+                          currentPhaseId: "", // Reset phase when propfirm changes
                         }))
                       }
                     >
@@ -434,54 +430,10 @@ export function CreateTradingAccountDialog({
                           ...prev,
                           initialBalance:
                             Number.parseFloat(e.target.value) || 0,
-                          currentBalance:
-                            Number.parseFloat(e.target.value) || 0,
-                          equity: Number.parseFloat(e.target.value) || 0,
                         }))
                       }
                       className="!bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 h-9 text-sm"
                     />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label
-                        htmlFor="currentBalance"
-                        className="text-slate-300"
-                      >
-                        Balance Actual
-                      </Label>
-                      <Input
-                        id="currentBalance"
-                        type="number"
-                        value={formData.currentBalance}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            currentBalance:
-                              Number.parseFloat(e.target.value) || 0,
-                          }))
-                        }
-                        className="!bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 h-9 text-sm"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="equity" className="text-slate-300">
-                        Equity
-                      </Label>
-                      <Input
-                        id="equity"
-                        type="number"
-                        value={formData.equity}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            equity: Number.parseFloat(e.target.value) || 0,
-                          }))
-                        }
-                        className="!bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 h-9 text-sm"
-                      />
-                    </div>
                   </div>
                 </CardContent>
               </Card>
