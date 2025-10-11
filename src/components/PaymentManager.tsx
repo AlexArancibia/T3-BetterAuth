@@ -108,7 +108,7 @@ export function PaymentManager({
       setIsCreateOpen(false);
       onRefresh();
     },
-    onError: (error) => {
+    onError: (error: { message: string }) => {
       toast.error("Error al crear pago", {
         description: error.message,
       });
@@ -122,7 +122,7 @@ export function PaymentManager({
       setSelectedPayment(null);
       onRefresh();
     },
-    onError: (error) => {
+    onError: (error: { message: string }) => {
       toast.error("Error al actualizar pago", {
         description: error.message,
       });

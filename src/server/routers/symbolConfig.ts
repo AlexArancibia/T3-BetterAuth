@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "../../lib/db";
 import {
@@ -459,12 +460,7 @@ export const symbolConfigRouter = router({
       }
 
       // Build where condition based on account type
-      const whereCondition: {
-        isAvailable: boolean;
-        symbol?: { category: string };
-        propfirmId?: string;
-        brokerId?: string;
-      } = {
+      const whereCondition: Prisma.SymbolConfigurationWhereInput = {
         isAvailable: true,
       };
 
@@ -559,10 +555,7 @@ export const symbolConfigRouter = router({
       const { propfirmId, brokerId, category } = input;
 
       // Build where conditions for both propfirm and broker
-      const baseWhereCondition: {
-        isAvailable: boolean;
-        symbol?: { category: string };
-      } = {
+      const baseWhereCondition: Prisma.SymbolConfigurationWhereInput = {
         isAvailable: true,
       };
 
