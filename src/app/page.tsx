@@ -8,7 +8,6 @@ import { DashboardPreview } from "@/components/landing/dashboard-preview";
 import { FAQSection } from "@/components/landing/faq-section";
 import { LandingHero } from "@/components/landing/landing-hero";
 import { PricingSection } from "@/components/landing/pricing-section";
-import { SocialProof } from "@/components/landing/social-proof";
 import { TestimonialGrid } from "@/components/landing/testimonial-grid";
 
 export default function HomePage() {
@@ -32,7 +31,7 @@ export default function HomePage() {
       <div className="relative">
         <LandingHero />
         {/* Dashboard Preview Wrapper - positioned to be cut by hero curve */}
-        <div className="relative z-30 -mt-[230px] md:-mt-[320px] px-4">
+        <div className="relative z-30 -mt-[230px] md:-mt-[320px] px-4 sm:px-6 lg:px-8">
           <div className="container mx-auto max-w-[1080px]">
             <AnimatedSection>
               <DashboardPreview />
@@ -40,41 +39,35 @@ export default function HomePage() {
           </div>
         </div>
         <AnimatedSection
-          className="relative container mx-auto px-4 mt-[180px] md:mt-[220px]"
-          delay={0.1}
-        >
-          <SocialProof />
-        </AnimatedSection>
-        <AnimatedSection
           id="features-section"
-          className="relative w-full mt-16 md:mt-20"
+          className="relative w-full mt-20 md:mt-24 lg:mt-32"
           delay={0.2}
         >
           <BentoSection />
         </AnimatedSection>
         <AnimatedSection
           id="pricing-section"
-          className="relative w-full mt-16 md:mt-20"
+          className="relative w-full mt-20 md:mt-24 lg:mt-32"
           delay={0.2}
         >
           <PricingSection />
         </AnimatedSection>
         <AnimatedSection
           id="testimonials-section"
-          className="relative container mx-auto mt-16 md:mt-20"
+          className="relative container mx-auto mt-20 md:mt-24 lg:mt-32"
           delay={0.2}
         >
           <TestimonialGrid />
         </AnimatedSection>
         <AnimatedSection
           id="faq-section"
-          className="relative w-full mt-16 md:mt-20"
+          className="relative w-full mt-20 md:mt-24 lg:mt-32"
           delay={0.2}
         >
           <FAQSection />
         </AnimatedSection>
         <AnimatedSection
-          className="relative w-full mt-16 md:mt-20 mb-0"
+          className="relative w-full mt-20 md:mt-24 lg:mt-32 mb-0"
           delay={0.2}
         >
           <CTASection />

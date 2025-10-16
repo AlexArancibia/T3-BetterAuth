@@ -590,25 +590,25 @@ export function LandingHero() {
       </div>
 
       {/* Main content */}
-      <div className="relative z-10 text-center px-4 pt-6 pb-10 max-w-5xl mx-auto">
-        <h1 className="text-white text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-5">
+      <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8 pt-6 pb-10 max-w-5xl mx-auto">
+        <h1 className="text-white text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-4 md:mb-5">
           Sistema para Funded <span className="text-primary">Traders</span>
         </h1>
-        <p className="text-white/80 text-lg md:text-xl font-normal leading-relaxed max-w-3xl mx-auto mb-7">
+        <p className="text-white/80 text-base sm:text-lg md:text-xl font-normal leading-relaxed max-w-3xl mx-auto mb-6 md:mb-7">
           La forma más inteligente de aprobar cuentas de fondeo, opera con tu
           capital sin miedo a perderlo, optimiza tu estrategia y aumenta tus
           probabilidades de éxito.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center">
           <Link href="/signup">
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 rounded-full font-semibold text-base shadow-lg">
+            <Button className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 sm:px-8 py-3 rounded-full font-semibold text-sm sm:text-base shadow-lg w-full sm:w-auto">
               Hablar con un Asesor
             </Button>
           </Link>
           <Link href="#features-section">
             <Button
               variant="outline"
-              className="bg-white/10 text-white border-white/20 hover:bg-white/20 px-8 py-3 rounded-full font-semibold text-base"
+              className="bg-white/10 text-white border-white/20 hover:bg-white/20 px-6 sm:px-8 py-3 rounded-full font-semibold text-sm sm:text-base w-full sm:w-auto"
             >
               Ver Funcionalidades
             </Button>

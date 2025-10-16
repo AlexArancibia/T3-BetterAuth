@@ -55,7 +55,7 @@ const TestimonialCard = ({
   const avatarBorderRadius = isLargeCard
     ? "rounded-[41px]"
     : "rounded-[30.75px]";
-  const padding = isLargeCard ? "p-6" : "p-5";
+  const padding = isLargeCard ? "p-4 sm:p-5 md:p-6" : "p-4 sm:p-5";
 
   let cardClasses = `flex flex-col justify-between items-start overflow-hidden rounded-xl shadow-md relative ${padding}`;
   let quoteClasses = "";
@@ -141,35 +141,37 @@ export function TestimonialGrid() {
   ];
 
   return (
-    <section className="w-full px-5 overflow-hidden flex flex-col justify-start py-6 md:py-8 lg:py-14">
-      <div className="text-center mb-12">
-        {/* Subtle accent line */}
-        <div className="w-16 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent mx-auto mb-8" />
+    <section className="w-full px-4 sm:px-6 lg:px-8 overflow-hidden flex flex-col justify-start py-16 md:py-20 lg:py-24">
+      <div className="container mx-auto max-w-7xl">
+        <div className="text-center mb-12 md:mb-16 lg:mb-20">
+          {/* Subtle accent line */}
+          <div className="w-16 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent mx-auto mb-6 md:mb-8" />
 
-        <h2 className="text-foreground text-4xl md:text-5xl lg:text-6xl font-light leading-tight mb-6 tracking-tight">
-          Trading
-          <br />
-          <span className="font-medium text-primary">sin esfuerzo</span>
-        </h2>
-        <p className="text-muted-foreground text-lg md:text-xl leading-relaxed max-w-2xl mx-auto font-light">
-          Escucha cómo traders escalan sus operaciones más rápido, colaboran sin
-          problemas, y operan con confianza usando las poderosas herramientas de
-          FENIZ
-        </p>
-      </div>
-      <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-5 max-w-7xl mx-auto">
-        {/* Primera columna - Testimonio principal */}
-        <div className="lg:col-span-1">
-          <TestimonialCard {...test0} />
+          <h2 className="text-foreground text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light leading-tight mb-4 md:mb-6 tracking-tight">
+            Trading
+            <br />
+            <span className="font-medium text-primary">sin esfuerzo</span>
+          </h2>
+          <p className="text-muted-foreground text-base sm:text-lg md:text-xl leading-relaxed max-w-2xl mx-auto font-light">
+            Escucha cómo traders escalan sus operaciones más rápido, colaboran
+            sin problemas, y operan con confianza usando las poderosas
+            herramientas de FENIZ
+          </p>
         </div>
-        {/* Segunda columna - 2 testimonios pequeños */}
-        <div className="lg:col-span-1 flex flex-col gap-5">
-          <TestimonialCard {...test1} />
-          <TestimonialCard {...test3} />
-        </div>
-        {/* Tercera columna - 1 testimonio grande */}
-        <div className="lg:col-span-1">
-          <TestimonialCard {...test2} />
+        <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
+          {/* Primera columna - Testimonio principal */}
+          <div className="lg:col-span-1">
+            <TestimonialCard {...test0} />
+          </div>
+          {/* Segunda columna - 2 testimonios pequeños */}
+          <div className="lg:col-span-1 flex flex-col gap-5">
+            <TestimonialCard {...test1} />
+            <TestimonialCard {...test3} />
+          </div>
+          {/* Tercera columna - 1 testimonio grande */}
+          <div className="lg:col-span-1">
+            <TestimonialCard {...test2} />
+          </div>
         </div>
       </div>
     </section>

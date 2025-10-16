@@ -70,21 +70,21 @@ export function PricingSection() {
   ];
 
   return (
-    <section className="w-full overflow-hidden flex flex-col justify-start items-center py-16 md:py-24 bg-gradient-to-br from-[#131B2F] via-[#0F172A] to-[#1E293B] relative">
+    <section className="w-full overflow-hidden flex flex-col justify-start items-center py-16 md:py-20 lg:py-24 bg-gradient-to-br from-[#131B2F] via-[#0F172A] to-[#1E293B] relative">
       {/* Background decoration */}
       <div className="absolute inset-0 bg-[url('/images/large-card-background.svg')] opacity-5 bg-cover bg-center" />
 
       <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
+        <div className="text-center mb-12 md:mb-16 lg:mb-20">
           {/* Subtle accent line */}
-          <div className="w-16 h-0.5 bg-gradient-to-r from-transparent via-white/50 to-transparent mx-auto mb-8" />
+          <div className="w-16 h-0.5 bg-gradient-to-r from-transparent via-white/50 to-transparent mx-auto mb-6 md:mb-8" />
 
-          <h2 className="text-white text-4xl md:text-5xl lg:text-6xl font-light leading-tight mb-6 tracking-tight">
+          <h2 className="text-white text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light leading-tight mb-4 md:mb-6 tracking-tight">
             Planes para Cada
             <br />
             <span className="font-medium text-white">Tipo de Trader</span>
           </h2>
-          <p className="text-gray-300 text-lg md:text-xl leading-relaxed max-w-3xl mx-auto font-light">
+          <p className="text-gray-300 text-base sm:text-lg md:text-xl leading-relaxed max-w-3xl mx-auto font-light">
             Elige el plan que se adapte a tu operativa, desde traders
             individuales hasta organizaciones profesionales y equipos grandes.
           </p>
@@ -122,11 +122,11 @@ export function PricingSection() {
         </div>
 
         {/* Pricing cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {pricingPlans.map((plan) => (
             <div
               key={plan.name}
-              className={`relative p-8 rounded-2xl flex flex-col transition-all duration-300 hover:scale-105 ${
+              className={`relative p-6 sm:p-8 rounded-2xl flex flex-col transition-all duration-300 hover:scale-105 ${
                 plan.popular
                   ? "bg-gradient-to-br from-primary to-primary/80 shadow-2xl shadow-primary/25 border-2 border-primary/50"
                   : "bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10"
