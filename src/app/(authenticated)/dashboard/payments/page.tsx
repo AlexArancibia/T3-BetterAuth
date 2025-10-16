@@ -14,6 +14,12 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/utils/trpc";
+import type {
+  PaymentProvider,
+  PaymentStatus,
+  SubscriptionPlan,
+  SubscriptionStatus,
+} from "@prisma/client";
 import {
   Activity,
   BarChart3,
@@ -27,6 +33,57 @@ import {
   Users,
 } from "lucide-react";
 import { useState } from "react";
+
+// Types for the data returned from tRPC queries (serialized)
+type PaymentWithRelations = {
+  id: string;
+  userId: string;
+  subscriptionId: string;
+  paymentProvider: PaymentProvider;
+  providerPaymentId: string | null;
+  amount: string; // Serialized as string from Decimal
+  currency: string;
+  status: PaymentStatus;
+  paymentMethod: string | null;
+  description: string | null;
+  metadata: unknown;
+  paidAt: string | null; // Serialized as ISO string
+  failedAt: string | null; // Serialized as ISO string
+  refundedAt: string | null; // Serialized as ISO string
+  refundAmount: string | null; // Serialized as string from Decimal
+  refundReason: string | null;
+  createdAt: string; // Serialized as ISO string
+  updatedAt: string; // Serialized as ISO string
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  subscription: {
+    id: string;
+    plan: SubscriptionPlan;
+    status: SubscriptionStatus;
+  };
+};
+
+type SubscriptionWithRelations = {
+  id: string;
+  userId: string;
+  plan: SubscriptionPlan;
+  status: SubscriptionStatus;
+  paymentProvider: PaymentProvider;
+  providerCustomerId: string | null;
+  providerSubscriptionId: string | null;
+  currentPlanStart: string | null; // Serialized as ISO string
+  currentPlanEnd: string | null; // Serialized as ISO string
+  createdAt: string; // Serialized as ISO string
+  updatedAt: string; // Serialized as ISO string
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
+};
 
 export default function PaymentsDashboardPage() {
   const [page, setPage] = useState(1);
@@ -42,8 +99,21 @@ export default function PaymentsDashboardPage() {
       page,
       limit,
       search: search || undefined,
-      status: statusFilter || undefined,
-      paymentProvider: providerFilter || undefined,
+      status: statusFilter as
+        | "PENDING"
+        | "PROCESSING"
+        | "COMPLETED"
+        | "FAILED"
+        | "CANCELLED"
+        | "REFUNDED"
+        | "PARTIALLY_REFUNDED"
+        | undefined,
+      paymentProvider: providerFilter as
+        | "STRIPE"
+        | "PAYPAL"
+        | "MERCADOPAGO"
+        | "CULQI"
+        | undefined,
     });
 
   // Get all subscriptions with pagination
@@ -94,7 +164,9 @@ export default function PaymentsDashboardPage() {
   const payments = paymentsData?.payments || [];
   const subscriptions = subscriptionsData?.subscriptions || [];
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (
+    status: string
+  ): "default" | "destructive" | "secondary" | "outline" => {
     switch (status) {
       case "COMPLETED":
       case "ACTIVE":
@@ -307,93 +379,98 @@ export default function PaymentsDashboardPage() {
             </CardHeader>
             <CardContent>
               {payments.length > 0 ? (
-                <ScrollableTable>
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left p-3 font-medium">Usuario</th>
-                        <th className="text-left p-3 font-medium">Monto</th>
-                        <th className="text-left p-3 font-medium">Plan</th>
-                        <th className="text-left p-3 font-medium">Estado</th>
-                        <th className="text-left p-3 font-medium">Proveedor</th>
-                        <th className="text-left p-3 font-medium">Fecha</th>
-                        <th className="text-left p-3 font-medium">Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {payments.map((payment) => (
-                        <tr
-                          key={payment.id}
-                          className="border-b hover:bg-muted/50"
+                <ScrollableTable<PaymentWithRelations>
+                  data={payments}
+                  columns={[
+                    {
+                      key: "user",
+                      title: "Usuario",
+                      render: (_, payment: PaymentWithRelations) => (
+                        <div>
+                          <div className="font-medium">{payment.user.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {payment.user.email}
+                          </div>
+                        </div>
+                      ),
+                    },
+                    {
+                      key: "amount",
+                      title: "Monto",
+                      render: (_, payment: PaymentWithRelations) => (
+                        <div>
+                          <div className="font-medium">
+                            ${Number(payment.amount).toFixed(2)}{" "}
+                            {payment.currency}
+                          </div>
+                          {payment.refundAmount && (
+                            <div className="text-sm text-red-600">
+                              Reembolsado: $
+                              {Number(payment.refundAmount).toFixed(2)}
+                            </div>
+                          )}
+                        </div>
+                      ),
+                    },
+                    {
+                      key: "plan",
+                      title: "Plan",
+                      render: (_, payment: PaymentWithRelations) => (
+                        <Badge variant="outline">
+                          {payment.subscription.plan}
+                        </Badge>
+                      ),
+                    },
+                    {
+                      key: "status",
+                      title: "Estado",
+                      render: (_, payment: PaymentWithRelations) => (
+                        <Badge variant={getStatusColor(payment.status)}>
+                          {payment.status}
+                        </Badge>
+                      ),
+                    },
+                    {
+                      key: "provider",
+                      title: "Proveedor",
+                      render: (_, payment: PaymentWithRelations) => (
+                        <Badge
+                          className={getProviderColor(payment.paymentProvider)}
                         >
-                          <td className="p-3">
-                            <div>
-                              <div className="font-medium">
-                                {payment.user.name}
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                {payment.user.email}
-                              </div>
+                          {payment.paymentProvider}
+                        </Badge>
+                      ),
+                    },
+                    {
+                      key: "date",
+                      title: "Fecha",
+                      render: (_, payment: PaymentWithRelations) => (
+                        <div>
+                          <div className="text-sm">
+                            {new Date(payment.createdAt).toLocaleDateString()}
+                          </div>
+                          {payment.paidAt && (
+                            <div className="text-xs text-muted-foreground">
+                              Pagado:{" "}
+                              {new Date(payment.paidAt).toLocaleDateString()}
                             </div>
-                          </td>
-                          <td className="p-3">
-                            <div className="font-medium">
-                              ${Number(payment.amount).toFixed(2)}{" "}
-                              {payment.currency}
-                            </div>
-                            {payment.refundAmount && (
-                              <div className="text-sm text-red-600">
-                                Reembolsado: $
-                                {Number(payment.refundAmount).toFixed(2)}
-                              </div>
-                            )}
-                          </td>
-                          <td className="p-3">
-                            <Badge variant="outline">
-                              {payment.subscription.plan}
-                            </Badge>
-                          </td>
-                          <td className="p-3">
-                            <Badge variant={getStatusColor(payment.status)}>
-                              {payment.status}
-                            </Badge>
-                          </td>
-                          <td className="p-3">
-                            <Badge
-                              className={getProviderColor(
-                                payment.paymentProvider
-                              )}
-                            >
-                              {payment.paymentProvider}
-                            </Badge>
-                          </td>
-                          <td className="p-3">
-                            <div>
-                              <div className="text-sm">
-                                {new Date(
-                                  payment.createdAt
-                                ).toLocaleDateString()}
-                              </div>
-                              {payment.paidAt && (
-                                <div className="text-xs text-muted-foreground">
-                                  Pagado:{" "}
-                                  {new Date(
-                                    payment.paidAt
-                                  ).toLocaleDateString()}
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                          <td className="p-3">
-                            <Button size="sm" variant="outline">
-                              Ver Detalles
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </ScrollableTable>
+                          )}
+                        </div>
+                      ),
+                    },
+                  ]}
+                  actions={[
+                    {
+                      label: "Ver Detalles",
+                      onClick: (payment: PaymentWithRelations) => {
+                        // TODO: Implement payment details modal
+                        console.log("View payment details:", payment.id);
+                      },
+                      variant: "default",
+                    },
+                  ]}
+                  showPagination={false}
+                />
               ) : (
                 <div className="text-center py-8">
                   <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -519,82 +596,94 @@ export default function PaymentsDashboardPage() {
             </CardHeader>
             <CardContent>
               {subscriptions.length > 0 ? (
-                <ScrollableTable>
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left p-3 font-medium">Usuario</th>
-                        <th className="text-left p-3 font-medium">Plan</th>
-                        <th className="text-left p-3 font-medium">Estado</th>
-                        <th className="text-left p-3 font-medium">Proveedor</th>
-                        <th className="text-left p-3 font-medium">Inicio</th>
-                        <th className="text-left p-3 font-medium">Fin</th>
-                        <th className="text-left p-3 font-medium">Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {subscriptions.map((subscription) => (
-                        <tr
-                          key={subscription.id}
-                          className="border-b hover:bg-muted/50"
+                <ScrollableTable<SubscriptionWithRelations>
+                  data={subscriptions}
+                  columns={[
+                    {
+                      key: "user",
+                      title: "Usuario",
+                      render: (_, subscription: SubscriptionWithRelations) => (
+                        <div>
+                          <div className="font-medium">
+                            {subscription.user.name}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {subscription.user.email}
+                          </div>
+                        </div>
+                      ),
+                    },
+                    {
+                      key: "plan",
+                      title: "Plan",
+                      render: (_, subscription: SubscriptionWithRelations) => (
+                        <Badge variant="outline">{subscription.plan}</Badge>
+                      ),
+                    },
+                    {
+                      key: "status",
+                      title: "Estado",
+                      render: (_, subscription: SubscriptionWithRelations) => (
+                        <Badge variant={getStatusColor(subscription.status)}>
+                          {subscription.status}
+                        </Badge>
+                      ),
+                    },
+                    {
+                      key: "provider",
+                      title: "Proveedor",
+                      render: (_, subscription: SubscriptionWithRelations) => (
+                        <Badge
+                          className={getProviderColor(
+                            subscription.paymentProvider
+                          )}
                         >
-                          <td className="p-3">
-                            <div>
-                              <div className="font-medium">
-                                {subscription.user.name}
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                {subscription.user.email}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="p-3">
-                            <Badge variant="outline">{subscription.plan}</Badge>
-                          </td>
-                          <td className="p-3">
-                            <Badge
-                              variant={getStatusColor(subscription.status)}
-                            >
-                              {subscription.status}
-                            </Badge>
-                          </td>
-                          <td className="p-3">
-                            <Badge
-                              className={getProviderColor(
-                                subscription.paymentProvider
-                              )}
-                            >
-                              {subscription.paymentProvider}
-                            </Badge>
-                          </td>
-                          <td className="p-3">
-                            <div className="text-sm">
-                              {subscription.currentPlanStart
-                                ? new Date(
-                                    subscription.currentPlanStart
-                                  ).toLocaleDateString()
-                                : "N/A"}
-                            </div>
-                          </td>
-                          <td className="p-3">
-                            <div className="text-sm">
-                              {subscription.currentPlanEnd
-                                ? new Date(
-                                    subscription.currentPlanEnd
-                                  ).toLocaleDateString()
-                                : "N/A"}
-                            </div>
-                          </td>
-                          <td className="p-3">
-                            <Button size="sm" variant="outline">
-                              Ver Detalles
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </ScrollableTable>
+                          {subscription.paymentProvider}
+                        </Badge>
+                      ),
+                    },
+                    {
+                      key: "start",
+                      title: "Inicio",
+                      render: (_, subscription: SubscriptionWithRelations) => (
+                        <div className="text-sm">
+                          {subscription.currentPlanStart
+                            ? new Date(
+                                subscription.currentPlanStart
+                              ).toLocaleDateString()
+                            : "N/A"}
+                        </div>
+                      ),
+                    },
+                    {
+                      key: "end",
+                      title: "Fin",
+                      render: (_, subscription: SubscriptionWithRelations) => (
+                        <div className="text-sm">
+                          {subscription.currentPlanEnd
+                            ? new Date(
+                                subscription.currentPlanEnd
+                              ).toLocaleDateString()
+                            : "N/A"}
+                        </div>
+                      ),
+                    },
+                  ]}
+                  actions={[
+                    {
+                      label: "Ver Detalles",
+                      onClick: (subscription: SubscriptionWithRelations) => {
+                        // TODO: Implement subscription details modal
+                        console.log(
+                          "View subscription details:",
+                          subscription.id
+                        );
+                      },
+                      variant: "default",
+                    },
+                  ]}
+                  showPagination={false}
+                />
               ) : (
                 <div className="text-center py-8">
                   <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />

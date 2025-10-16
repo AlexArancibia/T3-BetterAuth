@@ -35,6 +35,7 @@ type TradingAccount = {
   initialBalance: string | number;
   currentBalance: string | number;
   equity: string | number;
+  accountCost: string | number | null;
   currentPhaseId: string | null;
   status: string;
   createdAt: Date | string;
@@ -67,8 +68,9 @@ type TradingAccount = {
 // Type for trade
 type Trade = {
   id: string;
-  userId: string;
-  tradingAccountId: string;
+  externalTradeId: string | null;
+  accountId: string;
+  symbolId: string;
   symbol: {
     symbol: string;
     id: string;
@@ -81,21 +83,23 @@ type Trade = {
     quoteCurrency: string;
     pipDecimalPosition: number;
   };
-  side: "BUY" | "SELL";
-  volume: string | number;
-  openPrice: string | number;
-  closePrice: string | number | null;
+  direction: "buy" | "sell";
+  lotSize: string | number;
+  entryPrice: string | number;
+  exitPrice: string | number | null;
   stopLoss: string | number | null;
   takeProfit: string | number | null;
-  netProfit: string | number;
+  profitLoss: string | number;
   commission: string | number;
   swap: string | number;
-  status: "OPEN" | "CLOSED" | "CANCELLED";
+  netProfit: string | number;
+  status: "OPEN" | "CLOSED" | "CANCELLED" | "PARTIALLY_CLOSED";
+  entryMethod: "MANUAL" | "API" | "COPY_TRADING";
   openTime: Date | string;
   closeTime: Date | string | null;
   createdAt: Date | string;
   updatedAt: Date | string;
-  tradingAccount: {
+  account: {
     accountName: string;
   };
   notes: string | null;
@@ -285,6 +289,17 @@ export default function UserDetailPage() {
       ),
     },
     {
+      key: "accountCost",
+      title: "Costo de Cuenta",
+      render: (_: unknown, record: TradingAccount) => (
+        <div className="text-sm font-medium text-foreground">
+          {record.accountCost
+            ? `$${Number(record.accountCost).toLocaleString()}`
+            : "N/A"}
+        </div>
+      ),
+    },
+    {
       key: "status",
       title: "Estado",
       render: (_: unknown, record: TradingAccount) => (
@@ -325,43 +340,43 @@ export default function UserDetailPage() {
       ),
     },
     {
-      key: "side",
+      key: "direction",
       title: "Lado",
       render: (_: unknown, record: Trade) => (
         <Badge
           variant="outline"
           className={`text-xs font-medium ${
-            record.side === "BUY"
+            record.direction === "buy"
               ? "bg-green-50 text-green-600 border-green-200"
               : "bg-red-50 text-red-600 border-red-200"
           }`}
         >
-          {record.side}
+          {record.direction.toUpperCase()}
         </Badge>
       ),
     },
     {
-      key: "volume",
+      key: "lotSize",
       title: "Volumen",
       render: (_: unknown, record: Trade) => (
-        <div className="text-sm text-foreground">{record.volume || "N/A"}</div>
+        <div className="text-sm text-foreground">{record.lotSize || "N/A"}</div>
       ),
     },
     {
-      key: "openPrice",
+      key: "entryPrice",
       title: "Precio Entrada",
       render: (_: unknown, record: Trade) => (
         <div className="text-sm text-foreground">
-          {record.openPrice ? Number(record.openPrice).toFixed(5) : "N/A"}
+          {record.entryPrice ? Number(record.entryPrice).toFixed(5) : "N/A"}
         </div>
       ),
     },
     {
-      key: "closePrice",
+      key: "exitPrice",
       title: "Precio Salida",
       render: (_: unknown, record: Trade) => (
         <div className="text-sm text-foreground">
-          {record.closePrice ? Number(record.closePrice).toFixed(5) : "N/A"}
+          {record.exitPrice ? Number(record.exitPrice).toFixed(5) : "N/A"}
         </div>
       ),
     },
@@ -707,7 +722,26 @@ export default function UserDetailPage() {
           {/* Subscription Management */}
           <SubscriptionManager
             userId={userId}
-            subscriptions={userSubscriptions ? [userSubscriptions] : []}
+            subscriptions={
+              userSubscriptions
+                ? [
+                    {
+                      id: userSubscriptions.id,
+                      plan: userSubscriptions.plan,
+                      paymentProvider: userSubscriptions.paymentProvider,
+                      status: userSubscriptions.status,
+                      currentPlanStart: userSubscriptions.currentPlanStart
+                        ? new Date(userSubscriptions.currentPlanStart)
+                        : undefined,
+                      currentPlanEnd: userSubscriptions.currentPlanEnd
+                        ? new Date(userSubscriptions.currentPlanEnd)
+                        : undefined,
+                      createdAt: userSubscriptions.createdAt,
+                      updatedAt: userSubscriptions.updatedAt,
+                    },
+                  ]
+                : []
+            }
             onRefresh={() => {
               // Refresh all subscription-related data
               window.location.reload();
@@ -717,8 +751,18 @@ export default function UserDetailPage() {
           {/* Payment Management */}
           <PaymentManager
             userId={userId}
-            subscriptions={userSubscriptions ? [userSubscriptions] : []}
-            payments={userPayments?.payments || []}
+            subscriptions={
+              userSubscriptions
+                ? [
+                    {
+                      id: userSubscriptions.id,
+                      plan: userSubscriptions.plan,
+                      status: userSubscriptions.status,
+                    },
+                  ]
+                : []
+            }
+            payments={(userPayments?.payments as any) || []}
             onRefresh={() => {
               // Refresh all payment-related data
               window.location.reload();

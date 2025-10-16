@@ -214,6 +214,7 @@ export const tradingAccountRouter = router({
         initialBalance: z.number().positive(),
         currentBalance: z.number().optional(),
         equity: z.number().optional(),
+        accountCost: z.number().positive().optional(),
         currentPhaseId: z.string().optional(),
         status: z.string().default("active"),
       })
@@ -240,6 +241,7 @@ export const tradingAccountRouter = router({
           initialBalance: input.initialBalance,
           currentBalance: input.currentBalance || input.initialBalance,
           equity: input.equity || input.initialBalance,
+          accountCost: input.accountCost,
           currentPhaseId: input.currentPhaseId,
           status: input.status,
         },
@@ -264,6 +266,7 @@ export const tradingAccountRouter = router({
         server: z.string().optional(),
         currentBalance: z.number().optional(),
         equity: z.number().optional(),
+        accountCost: z.number().positive().optional(),
         currentPhaseId: z.string().optional(),
         status: z.string().optional(),
       })

@@ -525,6 +525,7 @@ model TradingAccount {
   initialBalance  Decimal     @db.Decimal(15, 2)
   currentBalance  Decimal     @default(0) @db.Decimal(15, 2)
   equity          Decimal     @default(0) @db.Decimal(15, 2)
+  accountCost     Decimal?    @db.Decimal(10, 2) // Costo de la cuenta (opcional)
   currentPhaseId  String?
   currentPhase    PropfirmPhase? @relation(fields: [currentPhaseId], references: [id])
   status          String      @default("active")

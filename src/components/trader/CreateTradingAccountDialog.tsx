@@ -30,6 +30,7 @@ interface CreateTradingAccountForm {
   brokerId: string;
   accountTypeId: string;
   initialBalance: number;
+  accountCost: number;
   currentPhaseId: string;
   status: string;
 }
@@ -61,6 +62,7 @@ export function CreateTradingAccountDialog({
     brokerId: "",
     accountTypeId: "",
     initialBalance: 100000,
+    accountCost: 0,
     currentPhaseId: "",
     status: "active",
   });
@@ -96,6 +98,7 @@ export function CreateTradingAccountDialog({
       brokerId: "",
       accountTypeId: "",
       initialBalance: 100000,
+      accountCost: 0,
       currentPhaseId: "",
       status: "active",
     });
@@ -138,6 +141,7 @@ export function CreateTradingAccountDialog({
       initialBalance: formData.initialBalance,
       currentBalance: formData.initialBalance, // Usar initialBalance como currentBalance
       equity: formData.initialBalance, // Usar initialBalance como equity
+      accountCost: formData.accountCost > 0 ? formData.accountCost : undefined,
       currentPhaseId: formData.currentPhaseId || undefined,
       status: formData.status,
     };
@@ -417,23 +421,46 @@ export function CreateTradingAccountDialog({
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="initialBalance" className="text-slate-300">
-                      Balance Inicial
-                    </Label>
-                    <Input
-                      id="initialBalance"
-                      type="number"
-                      value={formData.initialBalance}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          initialBalance:
-                            Number.parseFloat(e.target.value) || 0,
-                        }))
-                      }
-                      className="!bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 h-9 text-sm"
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label
+                        htmlFor="initialBalance"
+                        className="text-slate-300"
+                      >
+                        Balance Inicial
+                      </Label>
+                      <Input
+                        id="initialBalance"
+                        type="number"
+                        value={formData.initialBalance}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            initialBalance:
+                              Number.parseFloat(e.target.value) || 0,
+                          }))
+                        }
+                        className="!bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 h-9 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="accountCost" className="text-slate-300">
+                        Costo de la Cuenta
+                      </Label>
+                      <Input
+                        id="accountCost"
+                        type="number"
+                        value={formData.accountCost}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            accountCost: Number.parseFloat(e.target.value) || 0,
+                          }))
+                        }
+                        placeholder="Opcional"
+                        className="!bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 h-9 text-sm"
+                      />
+                    </div>
                   </div>
                 </CardContent>
               </Card>

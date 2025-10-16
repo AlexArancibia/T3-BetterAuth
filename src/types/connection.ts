@@ -13,6 +13,7 @@ export interface TradingAccount {
     displayName: string;
   } | null;
   currentBalance?: number | string;
+  accountCost?: number | string | null;
   trades?: Trade[];
 }
 
