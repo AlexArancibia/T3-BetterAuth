@@ -207,6 +207,7 @@ export function CreateTradingAccountDialog({
                     accountType: "BROKER",
                     propfirmId: "",
                     brokerId: "",
+                    accountCost: 0, // Reset account cost when switching to broker
                   }))
                 }
                 className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
@@ -421,7 +422,13 @@ export function CreateTradingAccountDialog({
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div
+                    className={
+                      formData.accountType === "PROPFIRM"
+                        ? "grid grid-cols-2 gap-4"
+                        : ""
+                    }
+                  >
                     <div>
                       <Label
                         htmlFor="initialBalance"
@@ -443,24 +450,27 @@ export function CreateTradingAccountDialog({
                         className="!bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 h-9 text-sm"
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="accountCost" className="text-slate-300">
-                        Costo de la Cuenta
-                      </Label>
-                      <Input
-                        id="accountCost"
-                        type="number"
-                        value={formData.accountCost}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            accountCost: Number.parseFloat(e.target.value) || 0,
-                          }))
-                        }
-                        placeholder="Opcional"
-                        className="!bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 h-9 text-sm"
-                      />
-                    </div>
+                    {formData.accountType === "PROPFIRM" && (
+                      <div>
+                        <Label htmlFor="accountCost" className="text-slate-300">
+                          Costo de la Cuenta
+                        </Label>
+                        <Input
+                          id="accountCost"
+                          type="number"
+                          value={formData.accountCost}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              accountCost:
+                                Number.parseFloat(e.target.value) || 0,
+                            }))
+                          }
+                          placeholder="Opcional"
+                          className="!bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 h-9 text-sm"
+                        />
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

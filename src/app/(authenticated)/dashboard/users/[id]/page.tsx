@@ -293,9 +293,11 @@ export default function UserDetailPage() {
       title: "Costo de Cuenta",
       render: (_: unknown, record: TradingAccount) => (
         <div className="text-sm font-medium text-foreground">
-          {record.accountCost
+          {record.accountType === "PROPFIRM" && record.accountCost
             ? `$${Number(record.accountCost).toLocaleString()}`
-            : "N/A"}
+            : record.accountType === "PROPFIRM"
+              ? "N/A"
+              : "-"}
         </div>
       ),
     },
