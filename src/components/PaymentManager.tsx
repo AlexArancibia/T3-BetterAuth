@@ -68,7 +68,7 @@ interface Subscription {
   status?: string;
 }
 
-interface Payment {
+export interface Payment {
   id: string;
   amount: number;
   status: string;

@@ -190,241 +190,244 @@ export function ScrollableTable<T = Record<string, unknown>>({
 
       {/* Table Container */}
       <div className="bg-card rounded-xl border border-border overflow-hidden">
-        {/* Loading State */}
-        {loading && (
-          <div className="space-y-0">
-            {/* Header skeleton */}
-            <div className="px-6 py-2.5 border-b border-border bg-muted/30">
-              <div className="flex space-x-6">
-                {selectable && <Skeleton className="h-4 w-4 rounded" />}
-                {columns.map((column, index) => (
-                  <Skeleton
-                    key={`header-${column.key || index}`}
-                    className="h-4 flex-1 max-w-[120px]"
-                  />
-                ))}
-                {hasActions && <Skeleton className="h-4 w-16" />}
-              </div>
-            </div>
-
-            {/* Rows skeleton */}
-            {Array.from({ length: 5 }).map((_, rowIndex) => (
-              <div
-                key={`skeleton-row-${Math.random()}-${rowIndex}`}
-                className="px-6 py-3 border-b border-border last:border-b-0"
-              >
-                <div className="flex space-x-6 items-center">
+        {/* Horizontal Scroll Container */}
+        <div className="table-scroll-container">
+          {/* Loading State */}
+          {loading && (
+            <div className="space-y-0">
+              {/* Header skeleton */}
+              <div className="px-6 py-2.5 border-b border-border bg-muted/30">
+                <div className="flex space-x-6">
                   {selectable && <Skeleton className="h-4 w-4 rounded" />}
-                  {columns.map((column, colIndex) => (
+                  {columns.map((column, index) => (
                     <Skeleton
-                      key={`skeleton-cell-${rowIndex}-${column.key || colIndex}`}
-                      className="h-4 flex-1"
-                      style={{
-                        maxWidth: column.width || "120px",
-                        minWidth: "80px",
-                      }}
+                      key={`header-${column.key || index}`}
+                      className="h-4 flex-1 max-w-[120px]"
                     />
                   ))}
-                  {hasActions && <Skeleton className="h-8 w-8 rounded" />}
+                  {hasActions && <Skeleton className="h-4 w-16" />}
                 </div>
               </div>
-            ))}
-          </div>
-        )}
 
-        {/* Error State */}
-        {error && (
-          <div className="p-4">
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          </div>
-        )}
+              {/* Rows skeleton */}
+              {Array.from({ length: 5 }).map((_, rowIndex) => (
+                <div
+                  key={`skeleton-row-${Math.random()}-${rowIndex}`}
+                  className="px-6 py-3 border-b border-border last:border-b-0"
+                >
+                  <div className="flex space-x-6 items-center">
+                    {selectable && <Skeleton className="h-4 w-4 rounded" />}
+                    {columns.map((column, colIndex) => (
+                      <Skeleton
+                        key={`skeleton-cell-${rowIndex}-${column.key || colIndex}`}
+                        className="h-4 flex-1"
+                        style={{
+                          maxWidth: column.width || "120px",
+                          minWidth: "80px",
+                        }}
+                      />
+                    ))}
+                    {hasActions && <Skeleton className="h-8 w-8 rounded" />}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
-        {/* Table */}
-        {!loading && !error && (
-          <Table className={tableClassName}>
-            {/* Table Header */}
-            <TableHeader
-              className={`bg-muted/30 [&_tr]:border-b [&_tr]:border-border ${headerClassName}`}
-            >
-              <TableRow>
-                {/* Selection Column */}
-                {selectable && (
-                  <TableHead className="px-6 py-2.5 text-left">
-                    <Checkbox
-                      checked={allSelected || someSelected}
-                      onCheckedChange={handleSelectAll}
-                    />
-                  </TableHead>
-                )}
+          {/* Error State */}
+          {error && (
+            <div className="p-4">
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            </div>
+          )}
 
-                {/* Data Columns */}
-                {columns.map((column) => (
-                  <TableHead
-                    key={column.key}
-                    className={`px-6 py-2.5 text-left text-xs font-normal text-muted-foreground/70 uppercase tracking-wide ${column.headerClassName || ""}`}
-                    style={{ width: column.width }}
-                  >
-                    <span className="font-medium">{column.title}</span>
-                  </TableHead>
-                ))}
-
-                {/* Actions Column */}
-                {hasActions && (
-                  <TableHead
-                    className="px-6 py-2.5 text-center text-xs font-normal text-muted-foreground/70 uppercase tracking-wide"
-                    style={{ width: actionsWidth }}
-                  >
-                    {actionsLabel}
-                  </TableHead>
-                )}
-              </TableRow>
-            </TableHeader>
-
-            {/* Table Body */}
-            <TableBody className="bg-card divide-y divide-border">
-              {filteredData.length === 0 ? (
+          {/* Table */}
+          {!loading && !error && (
+            <Table className={tableClassName}>
+              {/* Table Header */}
+              <TableHeader
+                className={`bg-muted/30 [&_tr]:border-b [&_tr]:border-border ${headerClassName}`}
+              >
                 <TableRow>
-                  <TableCell
-                    colSpan={
-                      columns.length +
-                      (selectable ? 1 : 0) +
-                      (hasActions ? 1 : 0)
-                    }
-                    className="px-6 py-8 text-center text-muted-foreground"
-                  >
-                    <div className="flex flex-col items-center">
-                      {emptyIcon && <div className="mb-4">{emptyIcon}</div>}
-                      <p>{emptyMessage}</p>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredData.map((record, index) => {
-                  const recordKey = getRowKey(record);
+                  {/* Selection Column */}
+                  {selectable && (
+                    <TableHead className="px-6 py-2.5 text-left">
+                      <Checkbox
+                        checked={allSelected || someSelected}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
+                  )}
 
-                  return (
-                    <TableRow
-                      key={recordKey}
-                      className={`${getRowClassName(record, index)} border-b border-border last:border-b-0`}
-                      onClick={() => onRowClick?.(record, index)}
-                      onDoubleClick={() => onRowDoubleClick?.(record, index)}
+                  {/* Data Columns */}
+                  {columns.map((column) => (
+                    <TableHead
+                      key={column.key}
+                      className={`px-6 py-2.5 text-left text-xs font-normal text-muted-foreground/70 uppercase tracking-wide ${column.headerClassName || ""}`}
+                      style={{ width: column.width }}
                     >
-                      {/* Selection Cell */}
-                      {selectable && (
-                        <TableCell className="px-6 py-3 whitespace-nowrap">
-                          <Checkbox
-                            checked={selectedRows.includes(recordKey)}
-                            onCheckedChange={(checked) =>
-                              handleRowSelect(recordKey, checked as boolean)
+                      <span className="font-medium">{column.title}</span>
+                    </TableHead>
+                  ))}
+
+                  {/* Actions Column */}
+                  {hasActions && (
+                    <TableHead
+                      className="px-6 py-2.5 text-center text-xs font-normal text-muted-foreground/70 uppercase tracking-wide"
+                      style={{ width: actionsWidth }}
+                    >
+                      {actionsLabel}
+                    </TableHead>
+                  )}
+                </TableRow>
+              </TableHeader>
+
+              {/* Table Body */}
+              <TableBody className="bg-card divide-y divide-border">
+                {filteredData.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={
+                        columns.length +
+                        (selectable ? 1 : 0) +
+                        (hasActions ? 1 : 0)
+                      }
+                      className="px-6 py-8 text-center text-muted-foreground"
+                    >
+                      <div className="flex flex-col items-center">
+                        {emptyIcon && <div className="mb-4">{emptyIcon}</div>}
+                        <p>{emptyMessage}</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredData.map((record, index) => {
+                    const recordKey = getRowKey(record);
+
+                    return (
+                      <TableRow
+                        key={recordKey}
+                        className={`${getRowClassName(record, index)} border-b border-border last:border-b-0`}
+                        onClick={() => onRowClick?.(record, index)}
+                        onDoubleClick={() => onRowDoubleClick?.(record, index)}
+                      >
+                        {/* Selection Cell */}
+                        {selectable && (
+                          <TableCell className="px-6 py-3 whitespace-nowrap">
+                            <Checkbox
+                              checked={selectedRows.includes(recordKey)}
+                              onCheckedChange={(checked) =>
+                                handleRowSelect(recordKey, checked as boolean)
+                              }
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </TableCell>
+                        )}
+
+                        {/* Data Cells */}
+                        {columns.map((column) => {
+                          const value = (record as Record<string, unknown>)[
+                            column.key
+                          ];
+
+                          const renderContent = () => {
+                            if (column.render) {
+                              return column.render(value, record, index);
                             }
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </TableCell>
-                      )}
 
-                      {/* Data Cells */}
-                      {columns.map((column) => {
-                        const value = (record as Record<string, unknown>)[
-                          column.key
-                        ];
-
-                        const renderContent = () => {
-                          if (column.render) {
-                            return column.render(value, record, index);
-                          }
-
-                          // Badge support
-                          if (column.badge) {
-                            if (typeof column.badge === "function") {
-                              const badgeConfig = column.badge(value, record);
+                            // Badge support
+                            if (column.badge) {
+                              if (typeof column.badge === "function") {
+                                const badgeConfig = column.badge(value, record);
+                                return (
+                                  <Badge
+                                    variant={badgeConfig.variant || "default"}
+                                  >
+                                    {badgeConfig.label}
+                                  </Badge>
+                                );
+                              }
                               return (
-                                <Badge
-                                  variant={badgeConfig.variant || "default"}
-                                >
-                                  {badgeConfig.label}
+                                <Badge variant="default">
+                                  {String(value ?? "")}
                                 </Badge>
                               );
                             }
-                            return (
-                              <Badge variant="default">
-                                {String(value ?? "")}
-                              </Badge>
-                            );
-                          }
 
-                          return String(value ?? "");
-                        };
+                            return String(value ?? "");
+                          };
 
-                        return (
-                          <TableCell
-                            key={column.key}
-                            className={`px-6 py-3 whitespace-nowrap text-base text-muted-foreground ${column.className || ""}`}
-                          >
-                            {renderContent()}
+                          return (
+                            <TableCell
+                              key={column.key}
+                              className={`px-6 py-3 whitespace-nowrap text-base text-muted-foreground ${column.className || ""}`}
+                            >
+                              {renderContent()}
+                            </TableCell>
+                          );
+                        })}
+
+                        {/* Actions Cell */}
+                        {hasActions && (
+                          <TableCell className="px-6 py-3 whitespace-nowrap text-center">
+                            <TableActionsDropdown
+                              items={actions.map(
+                                (action): TableActionItem => ({
+                                  label:
+                                    typeof action.label === "function"
+                                      ? action.label(record)
+                                      : action.label,
+                                  icon:
+                                    typeof action.icon === "function"
+                                      ? action.icon(record)
+                                      : action.icon,
+                                  onClick: () => action.onClick(record),
+                                  variant: action.variant,
+                                  disabled: action.disabled?.(record),
+                                  hidden: action.hidden?.(record),
+                                  separator: action.separator,
+                                })
+                              )}
+                              align="right"
+                            />
                           </TableCell>
-                        );
-                      })}
-
-                      {/* Actions Cell */}
-                      {hasActions && (
-                        <TableCell className="px-6 py-3 whitespace-nowrap text-center">
-                          <TableActionsDropdown
-                            items={actions.map(
-                              (action): TableActionItem => ({
-                                label:
-                                  typeof action.label === "function"
-                                    ? action.label(record)
-                                    : action.label,
-                                icon:
-                                  typeof action.icon === "function"
-                                    ? action.icon(record)
-                                    : action.icon,
-                                onClick: () => action.onClick(record),
-                                variant: action.variant,
-                                disabled: action.disabled?.(record),
-                                hidden: action.hidden?.(record),
-                                separator: action.separator,
-                              })
-                            )}
-                            align="right"
-                          />
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        )}
-
-        {/* Pagination */}
-        {showPagination &&
-          pagination &&
-          !loading &&
-          !error &&
-          filteredData.length > 0 && (
-            <div className="px-4 py-1.5 border-t border-border bg-muted/20">
-              <PaginationComponent
-                pagination={pagination}
-                onPageChange={
-                  onPageChange ||
-                  (() => {
-                    /* No pagination handler */
+                        )}
+                      </TableRow>
+                    );
                   })
-                }
-                onLimitChange={
-                  onPageSizeChange ||
-                  (() => {
-                    /* No page size handler */
-                  })
-                }
-                limitOptions={pageSizeOptions}
-              />
-            </div>
+                )}
+              </TableBody>
+            </Table>
           )}
+
+          {/* Pagination */}
+          {showPagination &&
+            pagination &&
+            !loading &&
+            !error &&
+            filteredData.length > 0 && (
+              <div className="px-4 py-1.5 border-t border-border bg-muted/20">
+                <PaginationComponent
+                  pagination={pagination}
+                  onPageChange={
+                    onPageChange ||
+                    (() => {
+                      /* No pagination handler */
+                    })
+                  }
+                  onLimitChange={
+                    onPageSizeChange ||
+                    (() => {
+                      /* No page size handler */
+                    })
+                  }
+                  limitOptions={pageSizeOptions}
+                />
+              </div>
+            )}
+        </div>
       </div>
     </div>
   );

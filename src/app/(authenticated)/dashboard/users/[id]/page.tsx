@@ -1,6 +1,7 @@
 "use client";
 
 import { PaymentManager } from "@/components/PaymentManager";
+import type { Payment } from "@/components/PaymentManager";
 import { SubscriptionManager } from "@/components/SubscriptionManager";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -764,7 +765,7 @@ export default function UserDetailPage() {
                   ]
                 : []
             }
-            payments={(userPayments?.payments as any) || []}
+            payments={(userPayments?.payments as Payment[]) || []}
             onRefresh={() => {
               // Refresh all payment-related data
               window.location.reload();

@@ -449,8 +449,58 @@ export default function ConnectionDetailPage() {
                 ),
               },
               {
+                key: "stopLoss",
+                title: "SL",
+                width: "100px",
+                render: (_, record) => (
+                  <div className="text-sm text-red-600">
+                    {record.stopLoss ? Number(record.stopLoss).toFixed(5) : "-"}
+                  </div>
+                ),
+              },
+              {
+                key: "takeProfit",
+                title: "TP",
+                width: "100px",
+                render: (_, record) => (
+                  <div className="text-sm text-emerald-600">
+                    {record.takeProfit
+                      ? Number(record.takeProfit).toFixed(5)
+                      : "-"}
+                  </div>
+                ),
+              },
+              {
+                key: "commission",
+                title: "Comisión",
+                width: "100px",
+                render: (_, record) => (
+                  <div className="text-sm text-gray-600">
+                    {record.commission
+                      ? `$${Number(record.commission).toFixed(2)}`
+                      : "-"}
+                  </div>
+                ),
+              },
+              {
+                key: "swap",
+                title: "Swap",
+                width: "90px",
+                render: (_, record) => (
+                  <div
+                    className={`text-sm ${
+                      Number(record.swap || 0) >= 0
+                        ? "text-emerald-600"
+                        : "text-red-600"
+                    }`}
+                  >
+                    {record.swap ? `$${Number(record.swap).toFixed(2)}` : "-"}
+                  </div>
+                ),
+              },
+              {
                 key: "pnlSort",
-                title: "P&L",
+                title: "P&L Neto",
                 width: "110px",
                 render: (_, record) => (
                   <div
@@ -466,13 +516,55 @@ export default function ConnectionDetailPage() {
                 ),
               },
               {
+                key: "status",
+                title: "Estado",
+                width: "90px",
+                render: (_, record) => {
+                  const statusColors = {
+                    OPEN: "bg-blue-100 text-blue-800",
+                    CLOSED: "bg-green-100 text-green-800",
+                    CANCELLED: "bg-red-100 text-red-800",
+                    PARTIALLY_CLOSED: "bg-yellow-100 text-yellow-800",
+                  };
+                  return (
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        statusColors[
+                          record.status as keyof typeof statusColors
+                        ] || "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {record.status}
+                    </span>
+                  );
+                },
+              },
+              {
                 key: "openTimeSort",
-                title: "Fecha",
+                title: "Fecha Apertura",
                 width: "140px",
                 render: (_, record) => (
                   <div className="text-sm" style={{ fontSize: "12px" }}>
                     {record.openTime
                       ? new Date(record.openTime).toLocaleString("es-ES", {
+                          year: "numeric",
+                          month: "2-digit",
+                          day: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "-"}
+                  </div>
+                ),
+              },
+              {
+                key: "closeTime",
+                title: "Fecha Cierre",
+                width: "140px",
+                render: (_, record) => (
+                  <div className="text-sm" style={{ fontSize: "12px" }}>
+                    {record.closeTime
+                      ? new Date(record.closeTime).toLocaleString("es-ES", {
                           year: "numeric",
                           month: "2-digit",
                           day: "2-digit",

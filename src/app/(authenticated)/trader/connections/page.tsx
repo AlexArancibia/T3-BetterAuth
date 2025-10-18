@@ -40,6 +40,7 @@ type Connection = {
     accountNumber: string | null;
     currentBalance: number | string;
     equity: number | string;
+    accountCost: number | string | null;
     propfirm: {
       name: string;
       displayName: string;
@@ -180,11 +181,14 @@ export default function ConnectionsPage() {
             {record.propfirmAccount.accountName}
           </div>
           <div className="text-xs text-muted-foreground">
-            Bal: $
-            {Number(record.propfirmAccount.currentBalance).toLocaleString()}
+            Precio: $
+            {record.propfirmAccount.accountCost
+              ? Number(record.propfirmAccount.accountCost).toLocaleString()
+              : "N/A"}
           </div>
           <div className="text-xs text-muted-foreground">
-            Eq: ${Number(record.propfirmAccount.equity).toLocaleString()}
+            Bal: $
+            {Number(record.propfirmAccount.currentBalance).toLocaleString()}
           </div>
         </div>
       ),
@@ -199,9 +203,6 @@ export default function ConnectionsPage() {
           </div>
           <div className="text-xs text-muted-foreground">
             Bal: ${Number(record.brokerAccount.currentBalance).toLocaleString()}
-          </div>
-          <div className="text-xs text-muted-foreground">
-            Eq: ${Number(record.brokerAccount.equity).toLocaleString()}
           </div>
         </div>
       ),

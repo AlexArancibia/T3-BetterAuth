@@ -32,6 +32,10 @@ export interface Trade {
   closePrice?: string | number | null | undefined;
   entryPrice?: string | number | null | undefined;
   exitPrice?: string | number | null | undefined;
+  stopLoss?: string | number | null | undefined;
+  takeProfit?: string | number | null | undefined;
+  commission?: string | number | null | undefined;
+  swap?: string | number | null | undefined;
   openTime?: Date | string | null | undefined;
   closeTime?: Date | string | null | undefined;
   createdAt?: Date | string | null | undefined;
@@ -84,6 +88,7 @@ export interface PropfirmAccount extends TradingAccount {
   propfirmId?: string;
   accountTypeId?: string;
   currentPhaseId?: string;
+  initialBalance?: number | string;
 }
 
 export interface BrokerAccount extends TradingAccount {

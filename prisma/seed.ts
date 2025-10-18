@@ -309,13 +309,13 @@ async function main() {
           PermissionAction.READ,
           PermissionAction.CREATE,
           PermissionAction.UPDATE,
-        ].includes(p.action as any)) ||
+        ].includes(p.action as PermissionAction)) ||
       (p.resource === PermissionResource.TRADE &&
         [
           PermissionAction.READ,
           PermissionAction.CREATE,
           PermissionAction.UPDATE,
-        ].includes(p.action as any)) ||
+        ].includes(p.action as PermissionAction)) ||
       (p.resource === PermissionResource.PROPFIRM &&
         p.action === PermissionAction.READ) ||
       (p.resource === PermissionResource.BROKER &&
@@ -467,145 +467,145 @@ async function main() {
 
   // Create phases and account types for MyForexFunds
   const mff = createdPropFirms[1];
-  if (mff) {
-    const mffPhases = [];
-    const mffPhaseData = [
-      {
-        phaseName: "challenge",
-        displayName: "Challenge Phase",
-        displayOrder: 1,
-        isEvaluation: true,
+  if (!mff) throw new Error("MyForexFunds propfirm not created");
+
+  const mffPhases = [];
+  const mffPhaseData = [
+    {
+      phaseName: "challenge",
+      displayName: "Challenge Phase",
+      displayOrder: 1,
+      isEvaluation: true,
+    },
+    {
+      phaseName: "verification",
+      displayName: "Verification Phase",
+      displayOrder: 2,
+      isEvaluation: true,
+    },
+    {
+      phaseName: "funded",
+      displayName: "Funded Account",
+      displayOrder: 3,
+      isEvaluation: false,
+    },
+  ];
+
+  for (const phase of mffPhaseData) {
+    const created = await prisma.propfirmPhase.create({
+      data: {
+        propfirmId: mff.id,
+        ...phase,
       },
-      {
-        phaseName: "verification",
-        displayName: "Verification Phase",
-        displayOrder: 2,
-        isEvaluation: true,
+    });
+    mffPhases.push(created);
+  }
+
+  const mffAccountTypes = [];
+  const mffAccountTypeData = [
+    { typeName: "10k", displayName: "10,000 USD", initialBalance: 10000 },
+    { typeName: "25k", displayName: "25,000 USD", initialBalance: 25000 },
+    { typeName: "50k", displayName: "50,000 USD", initialBalance: 50000 },
+    { typeName: "100k", displayName: "100,000 USD", initialBalance: 100000 },
+    { typeName: "200k", displayName: "200,000 USD", initialBalance: 200000 },
+  ];
+
+  for (const accountType of mffAccountTypeData) {
+    const created = await prisma.propfirmAccountType.create({
+      data: {
+        propfirmId: mff.id,
+        ...accountType,
       },
-      {
-        phaseName: "funded",
-        displayName: "Funded Account",
-        displayOrder: 3,
-        isEvaluation: false,
+    });
+    mffAccountTypes.push(created);
+  }
+
+  // Create rules configuration for MFF
+  const mffChallengePhase = mffPhases[0];
+  if (!mffChallengePhase) throw new Error("MFF Challenge phase not created");
+  for (const accountType of mffAccountTypes) {
+    await prisma.propfirmRulesConfiguration.create({
+      data: {
+        propfirmId: mff.id,
+        accountTypeId: accountType.id,
+        phaseId: mffChallengePhase.id,
+        maxDrawdown: 12.0,
+        dailyDrawdown: 6.0,
+        profitTarget: 8.0,
       },
-    ];
-
-    for (const phase of mffPhaseData) {
-      const created = await prisma.propfirmPhase.create({
-        data: {
-          propfirmId: mff.id,
-          ...phase,
-        },
-      });
-      mffPhases.push(created);
-    }
-
-    const mffAccountTypes = [];
-    const mffAccountTypeData = [
-      { typeName: "10k", displayName: "10,000 USD", initialBalance: 10000 },
-      { typeName: "25k", displayName: "25,000 USD", initialBalance: 25000 },
-      { typeName: "50k", displayName: "50,000 USD", initialBalance: 50000 },
-      { typeName: "100k", displayName: "100,000 USD", initialBalance: 100000 },
-      { typeName: "200k", displayName: "200,000 USD", initialBalance: 200000 },
-    ];
-
-    for (const accountType of mffAccountTypeData) {
-      const created = await prisma.propfirmAccountType.create({
-        data: {
-          propfirmId: mff.id,
-          ...accountType,
-        },
-      });
-      mffAccountTypes.push(created);
-    }
-
-    // Create rules configuration for MFF
-    const mffChallengePhase = mffPhases[0];
-    if (!mffChallengePhase) throw new Error("MFF Challenge phase not created");
-    for (const accountType of mffAccountTypes) {
-      await prisma.propfirmRulesConfiguration.create({
-        data: {
-          propfirmId: mff.id,
-          accountTypeId: accountType.id,
-          phaseId: mffChallengePhase.id,
-          maxDrawdown: 12.0,
-          dailyDrawdown: 6.0,
-          profitTarget: 8.0,
-        },
-      });
-    }
+    });
   }
 
   // Create phases and account types for The Funded Trader
   const tft = createdPropFirms[2];
-  if (tft) {
-    const tftPhases = [];
-    const tftPhaseData = [
-      {
-        phaseName: "challenge",
-        displayName: "Challenge Phase",
-        displayOrder: 1,
-        isEvaluation: true,
+  if (!tft) throw new Error("The Funded Trader propfirm not created");
+
+  const tftPhases = [];
+  const tftPhaseData = [
+    {
+      phaseName: "challenge",
+      displayName: "Challenge Phase",
+      displayOrder: 1,
+      isEvaluation: true,
+    },
+    {
+      phaseName: "verification",
+      displayName: "Verification Phase",
+      displayOrder: 2,
+      isEvaluation: true,
+    },
+    {
+      phaseName: "funded",
+      displayName: "Funded Account",
+      displayOrder: 3,
+      isEvaluation: false,
+    },
+  ];
+
+  for (const phase of tftPhaseData) {
+    const created = await prisma.propfirmPhase.create({
+      data: {
+        propfirmId: tft.id,
+        ...phase,
       },
-      {
-        phaseName: "verification",
-        displayName: "Verification Phase",
-        displayOrder: 2,
-        isEvaluation: true,
+    });
+    tftPhases.push(created);
+  }
+
+  const tftAccountTypes = [];
+  const tftAccountTypeData = [
+    { typeName: "5k", displayName: "5,000 USD", initialBalance: 5000 },
+    { typeName: "10k", displayName: "10,000 USD", initialBalance: 10000 },
+    { typeName: "25k", displayName: "25,000 USD", initialBalance: 25000 },
+    { typeName: "50k", displayName: "50,000 USD", initialBalance: 50000 },
+    { typeName: "100k", displayName: "100,000 USD", initialBalance: 100000 },
+    { typeName: "200k", displayName: "200,000 USD", initialBalance: 200000 },
+  ];
+
+  for (const accountType of tftAccountTypeData) {
+    const created = await prisma.propfirmAccountType.create({
+      data: {
+        propfirmId: tft.id,
+        ...accountType,
       },
-      {
-        phaseName: "funded",
-        displayName: "Funded Account",
-        displayOrder: 3,
-        isEvaluation: false,
+    });
+    tftAccountTypes.push(created);
+  }
+
+  // Create rules configuration for TFT
+  const tftChallengePhase = tftPhases[0];
+  if (!tftChallengePhase) throw new Error("TFT Challenge phase not created");
+  for (const accountType of tftAccountTypes) {
+    await prisma.propfirmRulesConfiguration.create({
+      data: {
+        propfirmId: tft.id,
+        accountTypeId: accountType.id,
+        phaseId: tftChallengePhase.id,
+        maxDrawdown: 8.0,
+        dailyDrawdown: 4.0,
+        profitTarget: 12.0,
       },
-    ];
-
-    for (const phase of tftPhaseData) {
-      const created = await prisma.propfirmPhase.create({
-        data: {
-          propfirmId: tft.id,
-          ...phase,
-        },
-      });
-      tftPhases.push(created);
-    }
-
-    const tftAccountTypes = [];
-    const tftAccountTypeData = [
-      { typeName: "5k", displayName: "5,000 USD", initialBalance: 5000 },
-      { typeName: "10k", displayName: "10,000 USD", initialBalance: 10000 },
-      { typeName: "25k", displayName: "25,000 USD", initialBalance: 25000 },
-      { typeName: "50k", displayName: "50,000 USD", initialBalance: 50000 },
-      { typeName: "100k", displayName: "100,000 USD", initialBalance: 100000 },
-      { typeName: "200k", displayName: "200,000 USD", initialBalance: 200000 },
-    ];
-
-    for (const accountType of tftAccountTypeData) {
-      const created = await prisma.propfirmAccountType.create({
-        data: {
-          propfirmId: tft.id,
-          ...accountType,
-        },
-      });
-      tftAccountTypes.push(created);
-    }
-
-    // Create rules configuration for TFT
-    const tftChallengePhase = tftPhases[0];
-    if (!tftChallengePhase) throw new Error("TFT Challenge phase not created");
-    for (const accountType of tftAccountTypes) {
-      await prisma.propfirmRulesConfiguration.create({
-        data: {
-          propfirmId: tft.id,
-          accountTypeId: accountType.id,
-          phaseId: tftChallengePhase.id,
-          maxDrawdown: 8.0,
-          dailyDrawdown: 4.0,
-          profitTarget: 12.0,
-        },
-      });
-    }
+    });
   }
 
   // ================================
@@ -846,6 +846,125 @@ async function main() {
   }
 
   // ================================
+  // PROPFIRM SYMBOL CONFIGURATIONS
+  // ================================
+  console.log("🏢 Creating propfirm symbol configurations...");
+
+  // FTMO configurations
+  for (const symbol of allSymbols) {
+    await prisma.symbolConfiguration.create({
+      data: {
+        propfirmId: ftmo.id,
+        symbolId: symbol.id,
+        pipValuePerLot:
+          symbol.category === "FOREX"
+            ? 10.0
+            : symbol.category === "CRYPTO"
+              ? 1.0
+              : 1.0,
+        pipTicks:
+          symbol.category === "FOREX" && symbol.quoteCurrency === "JPY"
+            ? 1
+            : 10,
+        commissionPerLot:
+          symbol.category === "FOREX"
+            ? 7.0
+            : symbol.category === "CRYPTO"
+              ? 15.0
+              : 5.0,
+        spreadTypical:
+          symbol.category === "FOREX"
+            ? 1.2
+            : symbol.category === "CRYPTO"
+              ? 30.0
+              : 0.8,
+        spreadRecommended:
+          symbol.category === "FOREX"
+            ? 1.0
+            : symbol.category === "CRYPTO"
+              ? 25.0
+              : 0.6,
+      },
+    });
+  }
+
+  // MyForexFunds configurations
+  for (const symbol of allSymbols) {
+    await prisma.symbolConfiguration.create({
+      data: {
+        propfirmId: mff.id,
+        symbolId: symbol.id,
+        pipValuePerLot:
+          symbol.category === "FOREX"
+            ? 10.0
+            : symbol.category === "CRYPTO"
+              ? 1.0
+              : 1.0,
+        pipTicks:
+          symbol.category === "FOREX" && symbol.quoteCurrency === "JPY"
+            ? 1
+            : 10,
+        commissionPerLot:
+          symbol.category === "FOREX"
+            ? 8.0
+            : symbol.category === "CRYPTO"
+              ? 18.0
+              : 6.0,
+        spreadTypical:
+          symbol.category === "FOREX"
+            ? 1.5
+            : symbol.category === "CRYPTO"
+              ? 35.0
+              : 1.0,
+        spreadRecommended:
+          symbol.category === "FOREX"
+            ? 1.3
+            : symbol.category === "CRYPTO"
+              ? 30.0
+              : 0.8,
+      },
+    });
+  }
+
+  // The Funded Trader configurations
+  for (const symbol of allSymbols) {
+    await prisma.symbolConfiguration.create({
+      data: {
+        propfirmId: tft.id,
+        symbolId: symbol.id,
+        pipValuePerLot:
+          symbol.category === "FOREX"
+            ? 10.0
+            : symbol.category === "CRYPTO"
+              ? 1.0
+              : 1.0,
+        pipTicks:
+          symbol.category === "FOREX" && symbol.quoteCurrency === "JPY"
+            ? 1
+            : 10,
+        commissionPerLot:
+          symbol.category === "FOREX"
+            ? 6.5
+            : symbol.category === "CRYPTO"
+              ? 12.0
+              : 4.5,
+        spreadTypical:
+          symbol.category === "FOREX"
+            ? 1.0
+            : symbol.category === "CRYPTO"
+              ? 28.0
+              : 0.7,
+        spreadRecommended:
+          symbol.category === "FOREX"
+            ? 0.8
+            : symbol.category === "CRYPTO"
+              ? 22.0
+              : 0.5,
+      },
+    });
+  }
+
+  // ================================
   // 8. USER CREATION (ALL ROLES)
   // ================================
   console.log("👥 Creating users of all types...");
@@ -1047,10 +1166,10 @@ async function main() {
           `✅ User ${userData.email} created successfully with role ${userData.role.name}`
         );
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(
         `❌ Error creating user ${userData.email}:`,
-        error.message || error
+        error instanceof Error ? error.message : error
       );
     }
   }
