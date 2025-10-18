@@ -309,13 +309,17 @@ async function main() {
           PermissionAction.READ,
           PermissionAction.CREATE,
           PermissionAction.UPDATE,
-        ].includes(p.action as PermissionAction)) ||
+          PermissionAction.DELETE,
+          PermissionAction.MANAGE,
+        ].includes(p.action)) ||
       (p.resource === PermissionResource.TRADE &&
         [
           PermissionAction.READ,
           PermissionAction.CREATE,
           PermissionAction.UPDATE,
-        ].includes(p.action as PermissionAction)) ||
+          PermissionAction.DELETE,
+          PermissionAction.MANAGE,
+        ].includes(p.action)) ||
       (p.resource === PermissionResource.PROPFIRM &&
         p.action === PermissionAction.READ) ||
       (p.resource === PermissionResource.BROKER &&

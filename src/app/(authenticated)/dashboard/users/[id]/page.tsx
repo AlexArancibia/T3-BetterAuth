@@ -765,7 +765,7 @@ export default function UserDetailPage() {
                   ]
                 : []
             }
-            payments={(userPayments?.payments as Payment[]) || []}
+            payments={(userPayments?.payments as unknown as Payment[]) || []}
             onRefresh={() => {
               // Refresh all payment-related data
               window.location.reload();
